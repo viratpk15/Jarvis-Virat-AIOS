@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from app.FastAPI.request_models import ChatRequest, ChatResponse
-from app.LangGraph.service import chat
+from app.Services.chat_service import chat
 
 router = APIRouter()
 
