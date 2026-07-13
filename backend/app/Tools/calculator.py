@@ -1,16 +1,27 @@
+"""
+Jarvis AIOS
+--------------------
+Calculator Tool
+"""
+
+from typing import Any
+
 from app.Tools.tool import Tool
 
 
 class CalculatorTool(Tool):
     name = "calculator"
 
-    description = "Perform mathematical calculations."
+    description = "Performs mathematical calculations."
 
-    def execute(self, **kwargs):
+    def execute(self, **kwargs: Any) -> Any:
 
         expression = kwargs.get("expression")
 
-        if not expression:
-            raise ValueError("Expression is required.")
+        if expression is None:
+            raise ValueError("Missing 'expression' argument.")
 
-        return eval(expression)
+        try:
+            return eval(expression, {"__builtins__": {}}, {})
+        except Exception as e:
+            raise ValueError(f"Calculation failed: {e}")
