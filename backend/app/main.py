@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.routes import router
+from app.FastAPI.routes import router
 
 app = FastAPI(
     title="Jarvis AIOS",
