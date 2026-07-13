@@ -10,27 +10,35 @@ from app.LangGraph.state import State
 
 def agent(state: State):
 
-    response = llm.invoke(
-        [
-            HumanMessage(
-                content=f"""
+    prompt = f"""
 {AGENT_PROMPT}
 
 User:
 
 {state["message"]}
+
+Observation:
+
+{json.dumps(state["observation"])}
 """
-            )
-        ]
-    )
+
+    response = llm.invoke([HumanMessage(content=prompt)])
 
     try:
-        decision = json.loads(response.content)
+        action = json.loads(response.content)
 
     except Exception:
-        decision = {
+        action = {
             "type": "final",
             "response": response.content,
         }
 
-    return decision
+    if action["type"] == "final":
+        return {
+            "action": action,
+            "response": action["response"],
+        }
+
+    return {
+        "action": action,
+    }
