@@ -424,13 +424,22 @@ class SQLitePersistenceBackend:
             # Combine messages with embeddings
             result: list[tuple[int, BaseMessage, list[float] | None]] = []
             for msg_type, content, timestamp, position in message_rows:
-                # Reconstruct message object
+                # Reconstruct message object with timestamp in metadata
                 if msg_type == "human":
-                    message = HumanMessage(content=content)
+                    message = HumanMessage(
+                        content=content,
+                        additional_kwargs={"timestamp": timestamp}
+                    )
                 elif msg_type == "ai":
-                    message = AIMessage(content=content)
+                    message = AIMessage(
+                        content=content,
+                        additional_kwargs={"timestamp": timestamp}
+                    )
                 elif msg_type == "system":
-                    message = SystemMessage(content=content)
+                    message = SystemMessage(
+                        content=content,
+                        additional_kwargs={"timestamp": timestamp}
+                    )
                 else:
                     continue
 

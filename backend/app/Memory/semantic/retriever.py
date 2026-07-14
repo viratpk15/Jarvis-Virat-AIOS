@@ -3,7 +3,7 @@ Semantic Retriever
 
 Retrieves relevant memories using cosine similarity between query embedding
 and stored message embeddings. Implements pure Python cosine similarity
-without external dependencies.
+without external dependencies. Uses MemoryRanker for multi-factor ranking.
 """
 
 import math
@@ -14,6 +14,7 @@ from langchain_core.messages import BaseMessage
 
 from app.Memory.embeddings.manager import EmbeddingManager
 from app.Memory.persistence.sqlite_backend import SQLitePersistenceBackend
+from app.Memory.semantic.ranker import MemoryRanker, RetrievedMemory
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +86,7 @@ class SemanticRetriever:
         self._embedding_manager = embedding_manager
         self._persistence = persistence
         self._similarity_threshold = similarity_threshold
+        self._ranker = MemoryRanker()
 
     def retrieve(
         self,
@@ -132,8 +134,8 @@ class SemanticRetriever:
             logger.debug("No stored embeddings found for session %s", session_id)
             return []
 
-        # Compute similarity scores
-        scored_messages: list[tuple[float, BaseMessage]] = []
+        # Compute similarity scores and create RetrievedMemory objects
+        candidates: list[RetrievedMemory] = []
 
         for position, message, embedding in stored_embeddings:
             if not embedding:
@@ -144,16 +146,29 @@ class SemanticRetriever:
 
             # Only include messages above threshold
             if similarity >= self._similarity_threshold:
-                scored_messages.append((similarity, message))
+                # Extract timestamp from message metadata if available
+                timestamp = getattr(message, 'timestamp', '2024-01-01T00:00:00')
+                if hasattr(message, 'additional_kwargs') and 'timestamp' in message.additional_kwargs:
+                    timestamp = message.additional_kwargs['timestamp']
 
-        # Sort by similarity descending (highest first)
-        scored_messages.sort(key=lambda x: x[0], reverse=True)
+                candidates.append(RetrievedMemory(
+                    message=message,
+                    similarity=similarity,
+                    timestamp=timestamp,
+                ))
 
-        # Return top-k messages (just the messages, not the scores)
-        top_messages = [msg for _, msg in scored_messages[:top_k]]
+        # Use MemoryRanker to rank candidates
+        ranked_memories = self._ranker.rank(
+            query=query,
+            candidates=candidates,
+            top_k=top_k,
+        )
+
+        # Extract messages from ranked memories
+        top_messages = [memory.message for memory in ranked_memories]
 
         logger.info(
-            "Retrieved %d relevant memories for session %s (threshold=%.2f, top_k=%d)",
+            "Retrieved and ranked %d relevant memories for session %s (threshold=%.2f, top_k=%d)",
             len(top_messages),
             session_id,
             self._similarity_threshold,
