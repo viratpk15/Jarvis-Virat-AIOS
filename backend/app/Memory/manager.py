@@ -1,7 +1,11 @@
+from langchain_core.messages import BaseMessage
+
 from app.Memory.storage import storage
 from app.Memory.window import WindowManager, WindowedChatMessageHistory
 from app.Memory.summarization import SummaryManager
 from app.Memory.persistence import SQLitePersistenceBackend
+from app.Memory.embeddings import EmbeddingManager, LocalEmbeddingProvider
+from app.Memory.semantic import SemanticRetriever
 
 
 # Window configuration
@@ -19,10 +23,18 @@ SUMMARIZATION_KEEP_RECENT: int = 10
 # Path to SQLite database for persistent memory
 PERSISTENCE_DB_PATH: str = "./data/memory.db"
 
+# Embedding configuration
+# Whether to enable embedding generation
+EMBEDDING_ENABLED: bool = True
+
+# Semantic retrieval configuration
+# Default similarity threshold for semantic retrieval (0-1)
+SEMANTIC_SIMILARITY_THRESHOLD: float = 0.5
+
 
 class MemoryManager:
     def __init__(self):
-        """Initialize memory manager with window, summarization, and persistence."""
+        """Initialize memory manager with window, summarization, persistence, and embeddings."""
         self._window_manager = WindowManager(window_size=WINDOW_SIZE)
         self._summary_manager = SummaryManager(
             threshold=SUMMARIZATION_THRESHOLD,
@@ -30,6 +42,14 @@ class MemoryManager:
         )
         self._persistence = SQLitePersistenceBackend(db_path=PERSISTENCE_DB_PATH)
         self._hydrated_sessions: set[str] = set()  # Track hydrated sessions
+
+        # Initialize embedding manager
+        embedding_provider = LocalEmbeddingProvider()
+        self._embedding_manager = EmbeddingManager(
+            provider=embedding_provider,
+            persistence=self._persistence if EMBEDDING_ENABLED else None,
+            enabled=EMBEDDING_ENABLED,
+        )
 
     def get_conversation(self, session_id: str) -> WindowedChatMessageHistory:
         """Get conversation history for a session with window, summarization, and persistence.
@@ -70,7 +90,7 @@ class MemoryManager:
             # Already hydrated, get summary from persistence if needed
             summary = self._persistence.load_summary(session_id)
 
-        # Wrap it with windowing, summarization, and persistence
+        # Wrap it with windowing, summarization, persistence, and embeddings
         return WindowedChatMessageHistory(
             window_manager=self._window_manager,
             history=history,
@@ -78,6 +98,41 @@ class MemoryManager:
             persistence=self._persistence,
             session_id=session_id,
             summary=summary,
+            embedding_manager=self._embedding_manager,
+        )
+
+    def get_relevant_memories(
+        self,
+        session_id: str,
+        query: str,
+        top_k: int = 5,
+    ) -> list[BaseMessage]:
+        """Retrieve relevant memories using semantic similarity.
+
+        Uses the SemanticRetriever to find messages whose embeddings are
+        most similar to the query. This is the ONLY public interface for
+        semantic memory retrieval.
+
+        Args:
+            session_id: Unique session identifier.
+            query: User query to find relevant memories for.
+            top_k: Maximum number of messages to return. Defaults to 5.
+
+        Returns:
+            List of BaseMessage objects ranked by similarity (highest first).
+            Returns empty list if no messages meet the threshold or if
+            embeddings are not enabled.
+        """
+        retriever = SemanticRetriever(
+            embedding_manager=self._embedding_manager,
+            persistence=self._persistence,
+            similarity_threshold=SEMANTIC_SIMILARITY_THRESHOLD,
+        )
+
+        return retriever.retrieve(
+            session_id=session_id,
+            query=query,
+            top_k=top_k,
         )
 
 

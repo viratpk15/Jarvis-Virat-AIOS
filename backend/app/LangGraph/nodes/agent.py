@@ -238,20 +238,35 @@ def agent(state: State):
     # MemoryManager handles missing sessions gracefully by creating new history
     memory = memory_manager.get_conversation(session_id)
 
+    # Retrieve relevant memories using semantic similarity
+    # MemoryManager is the ONLY public interface for semantic retrieval
+    relevant_memories = memory_manager.get_relevant_memories(
+        session_id=session_id,
+        query=state["message"],
+        top_k=5,
+    )
+
     # Build the complete message list for the LLM
-    # Order: System prompt → conversation history → current user message → observation (if any)
+    # Order: System prompt → conversation history (summary + recent) → relevant memories → current user message → observation
     messages: list = [SystemMessage(content=AGENT_PROMPT)]
-    
-    # Add conversation history (previous HumanMessage/AIMessage pairs)
+
+    # Add conversation history (summary + recent messages)
     messages.extend(memory.messages)
-    
+
+    # Add relevant memories after summary, before recent conversation
+    if relevant_memories:
+        memories_text = "Relevant Memories:\n"
+        for msg in relevant_memories:
+            memories_text += f"- {msg.content}\n"
+        messages.append(SystemMessage(content=memories_text.strip()))
+
     # Add the current user message
     current_message = HumanMessage(content=state["message"])
     messages.append(current_message)
-    
+
     # Store the user message in conversation history
     memory.add_message(current_message)
-    
+
     # Add observation as a separate message if present
     if state["observation"]:
         messages.append(HumanMessage(content=f"Observation:\n\n{json.dumps(state['observation'])}"))

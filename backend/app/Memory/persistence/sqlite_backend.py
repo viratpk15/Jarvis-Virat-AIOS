@@ -79,6 +79,34 @@ class SQLitePersistenceBackend:
                 ON messages(session_id, order_in_session)
             """)
 
+            # Create table for message embeddings
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS message_embeddings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id TEXT NOT NULL,
+                    position INTEGER NOT NULL,
+                    embedding BLOB NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+                )
+            """)
+
+            # Create index for embedding queries
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_embeddings_session
+                ON message_embeddings(session_id, position)
+            """)
+
+            # Create table for summary embeddings
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS summary_embeddings (
+                    session_id TEXT PRIMARY KEY,
+                    embedding BLOB NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+                )
+            """)
+
             conn.commit()
 
     def load_session(self, session_id: str) -> dict[str, Any] | None:
@@ -311,3 +339,103 @@ class SQLitePersistenceBackend:
                 (session_id,)
             )
             return cursor.fetchone()[0] > 0
+
+    def save_embedding(self, session_id: str, position: int, embedding: list[float]) -> None:
+        """Save embedding for a message.
+
+        Args:
+            session_id: Unique session identifier.
+            position: Message position in session.
+            embedding: Embedding vector as list of floats.
+        """
+        now = datetime.utcnow().isoformat()
+        embedding_blob = json.dumps(embedding).encode()
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO message_embeddings (session_id, position, embedding, created_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                (session_id, position, embedding_blob, now)
+            )
+            conn.commit()
+
+    def save_summary_embedding(self, session_id: str, embedding: list[float]) -> None:
+        """Save embedding for a summary.
+
+        Args:
+            session_id: Unique session identifier.
+            embedding: Embedding vector as list of floats.
+        """
+        now = datetime.utcnow().isoformat()
+        embedding_blob = json.dumps(embedding).encode()
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO summary_embeddings (session_id, embedding, created_at)
+                VALUES (?, ?, ?)
+                """,
+                (session_id, embedding_blob, now)
+            )
+            conn.commit()
+
+    def load_session_embeddings(self, session_id: str) -> list[tuple[int, BaseMessage, list[float] | None]]:
+        """Load all messages with their embeddings for a session.
+
+        Args:
+            session_id: Unique session identifier.
+
+        Returns:
+            List of tuples (position, message, embedding) for each message.
+            Messages without embeddings have None for the embedding value.
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Load all messages for the session
+            cursor.execute(
+                "SELECT message_type, content, timestamp, order_in_session "
+                "FROM messages WHERE session_id = ? ORDER BY order_in_session ASC",
+                (session_id,)
+            )
+            message_rows = cursor.fetchall()
+
+            # Load all embeddings for the session
+            cursor.execute(
+                "SELECT position, embedding FROM message_embeddings WHERE session_id = ?",
+                (session_id,)
+            )
+            embedding_rows = cursor.fetchall()
+
+            # Create a mapping of position to embedding
+            embedding_map: dict[int, list[float]] = {}
+            for position, embedding_blob in embedding_rows:
+                try:
+                    embedding = json.loads(embedding_blob.decode())
+                    embedding_map[position] = embedding
+                except (json.JSONDecodeError, AttributeError):
+                    # Skip corrupted embeddings
+                    continue
+
+            # Combine messages with embeddings
+            result: list[tuple[int, BaseMessage, list[float] | None]] = []
+            for msg_type, content, timestamp, position in message_rows:
+                # Reconstruct message object
+                if msg_type == "human":
+                    message = HumanMessage(content=content)
+                elif msg_type == "ai":
+                    message = AIMessage(content=content)
+                elif msg_type == "system":
+                    message = SystemMessage(content=content)
+                else:
+                    continue
+
+                # Get embedding if it exists
+                embedding = embedding_map.get(position)
+                result.append((position, message, embedding))
+
+            return result

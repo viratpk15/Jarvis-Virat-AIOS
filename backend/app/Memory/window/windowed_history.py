@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.Memory.window.window_manager import WindowManager
     from app.Memory.summarization.summary_manager import SummaryManager
     from app.Memory.persistence.sqlite_backend import SQLitePersistenceBackend
+    from app.Memory.embeddings.manager import EmbeddingManager
 
 
 class WindowedChatMessageHistory:
@@ -39,6 +40,7 @@ class WindowedChatMessageHistory:
         persistence: "SQLitePersistenceBackend | None" = None,
         session_id: str | None = None,
         summary: str | None = None,
+        embedding_manager: "EmbeddingManager | None" = None,
     ):
         """Initialize windowed chat history.
 
@@ -49,6 +51,7 @@ class WindowedChatMessageHistory:
             persistence: Optional SQLitePersistenceBackend for persistent storage.
             session_id: Session identifier for persistence.
             summary: Optional pre-existing summary to restore.
+            embedding_manager: Optional EmbeddingManager for embedding generation.
         """
         self._history = history if history is not None else InMemoryChatMessageHistory()
         self._window_manager = window_manager
@@ -57,6 +60,7 @@ class WindowedChatMessageHistory:
         self._session_id = session_id
         self._summary: str | None = summary  # Stores the conversation summary
         self._message_position: int = 0  # Track message position for incremental persistence
+        self._embedding_manager = embedding_manager
 
     @property
     def messages(self) -> list[BaseMessage]:
@@ -84,12 +88,13 @@ class WindowedChatMessageHistory:
         return result
 
     def add_message(self, message: BaseMessage) -> None:
-        """Add a message to the history with event-driven summarization and persistence.
+        """Add a message to the history with event-driven summarization, persistence, and embeddings.
 
         Messages are added to the underlying history. If summarization is
         enabled and the threshold is crossed, older messages are automatically
         summarized and removed, leaving only the summary and recent messages.
         Messages are persisted incrementally to SQLite if persistence is enabled.
+        Embeddings are generated for messages if embedding manager is enabled.
 
         Args:
             message: Message to add to history.
@@ -106,6 +111,14 @@ class WindowedChatMessageHistory:
             )
             self._message_position += 1
 
+        # Generate and store embedding if embedding manager is enabled
+        if self._embedding_manager and self._session_id:
+            self._embedding_manager.generate_and_store_message_embedding(
+                self._session_id,
+                message,
+                self._message_position - 1,  # Use the position before increment
+            )
+
         # Check if summarization is needed (event-driven, not request-driven)
         if self._summary_manager and self._summary_manager.should_summarize(
             len(self._history.messages)
@@ -120,6 +133,7 @@ class WindowedChatMessageHistory:
         an updated summary representing the entire conversation history so far.
         Summarizes older messages, stores the summary, and removes old messages.
         The updated summary and recent message window are persisted to SQLite.
+        Embeddings are generated for the updated summary if embedding manager is enabled.
         """
         all_messages = self._history.messages
 
@@ -160,6 +174,13 @@ class WindowedChatMessageHistory:
         if self._persistence and self._session_id:
             self._persistence.update_summary(self._session_id, self._summary)
             self._persistence.replace_message_window(self._session_id, self._history.messages)
+
+        # Generate and store embedding for the updated summary
+        if self._embedding_manager and self._session_id and self._summary:
+            self._embedding_manager.generate_and_store_summary_embedding(
+                self._session_id,
+                self._summary,
+            )
 
     def clear(self) -> None:
         """Clear all messages from history."""
