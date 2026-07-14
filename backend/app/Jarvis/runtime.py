@@ -19,6 +19,7 @@ class Jarvis:
                 "action": {},
                 "observation": {},
                 "response": "",
+                "iteration_count": 0,
             }
         )
 

@@ -10,8 +10,9 @@ Your job is to decide the NEXT ACTION.
 Available tools:
 
 calculator
-python
+datetime
 file_reader
+python
 
 Rules
 

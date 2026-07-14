@@ -11,3 +11,5 @@ class State(TypedDict):
     observation: dict[str, Any]
 
     response: str
+
+    iteration_count: int
