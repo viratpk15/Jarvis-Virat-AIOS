@@ -60,13 +60,10 @@ def _validate_path_safety(path: str, allowed_dir: Path) -> Path:
     for part in parts:
         if part == "..":
             raise ValueError(
-                "Path must not contain '..'. "
-                "Directory traversal is not allowed."
+                "Path must not contain '..'. Directory traversal is not allowed."
             )
         if part == ".":
-            raise ValueError(
-                "Path must not contain '.' components."
-            )
+            raise ValueError("Path must not contain '.' components.")
 
     # Step 2: Reject absolute paths
     # All paths must be relative to the workspace directory.
@@ -85,9 +82,7 @@ def _validate_path_safety(path: str, allowed_dir: Path) -> Path:
     try:
         resolved_path = (allowed_dir / path).resolve(strict=False)
     except (OSError, RuntimeError) as e:
-        raise ValueError(
-            f"Invalid file path: {e}"
-        ) from e
+        raise ValueError(f"Invalid file path: {e}") from e
 
     # Step 4: Verify the resolved canonical path is within the allowed directory.
     # If the path traversed outside via symlinks, '..' after resolution,
@@ -136,23 +131,17 @@ class FileReaderTool(Tool):
             )
 
         if not isinstance(path, str):
-            raise ValueError(
-                "The 'path' argument must be a string."
-            )
+            raise ValueError("The 'path' argument must be a string.")
 
         if not path.strip():
-            raise ValueError(
-                "The 'path' argument must be a non-empty string."
-            )
+            raise ValueError("The 'path' argument must be a non-empty string.")
 
         # --- Workspace directory setup ---
         # Ensure the allowed workspace directory exists
         try:
             _ALLOWED_DIRECTORY.mkdir(parents=True, exist_ok=True)
         except OSError as e:
-            raise ValueError(
-                f"Cannot access workspace directory: {e}"
-            ) from e
+            raise ValueError(f"Cannot access workspace directory: {e}") from e
 
         # Resolve the allowed directory to its canonical absolute path.
         # This must be done at execution time (not import time) because
@@ -161,9 +150,7 @@ class FileReaderTool(Tool):
         try:
             allowed_resolved = _ALLOWED_DIRECTORY.resolve(strict=False)
         except (OSError, RuntimeError) as e:
-            raise ValueError(
-                f"Cannot resolve workspace directory: {e}"
-            ) from e
+            raise ValueError(f"Cannot resolve workspace directory: {e}") from e
 
         # --- Path safety validation ---
         # All traversal, symlink, and containment checks are performed
@@ -172,14 +159,10 @@ class FileReaderTool(Tool):
 
         # --- File existence and type checks ---
         if not requested_path.exists():
-            raise ValueError(
-                "File not found at the specified path."
-            )
+            raise ValueError("File not found at the specified path.")
 
         if not requested_path.is_file():
-            raise ValueError(
-                "The specified path is not a regular file."
-            )
+            raise ValueError("The specified path is not a regular file.")
 
         # --- File size limit ---
         try:
@@ -189,8 +172,7 @@ class FileReaderTool(Tool):
 
         if file_size > MAX_FILE_SIZE_BYTES:
             raise ValueError(
-                f"File too large. Maximum allowed size is "
-                f"approximately 1 MB."
+                "File too large. Maximum allowed size is approximately 1 MB."
             )
 
         # --- Read and return file contents ---

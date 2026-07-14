@@ -15,10 +15,11 @@ LLM outputs.
 
 import json
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from pydantic import ValidationError
 
 from app.LLM.client import llm
+from app.Memory.manager import memory_manager
 from app.Prompts.agent import AGENT_PROMPT
 from app.Models.action import ParsedAction, FinalAction
 from app.Tools.registry import registry
@@ -218,6 +219,10 @@ def agent(state: State):
     is additionally validated for structural integrity before it enters
     the graph state.
 
+    Conversation history is loaded from MemoryManager, the current user
+    message is appended, and the assistant response is saved after generation.
+    This ensures complete session isolation and conversation continuity.
+
     Args:
         state: The current LangGraph state.
 
@@ -227,19 +232,34 @@ def agent(state: State):
         is returned with the raw LLM output instead of raising an
         exception, ensuring the graph continues normally.
     """
-    prompt = f"""
-{AGENT_PROMPT}
+    session_id = state["session_id"]
 
-User:
+    # Load conversation history for this session
+    # MemoryManager handles missing sessions gracefully by creating new history
+    memory = memory_manager.get_conversation(session_id)
 
-{state["message"]}
+    # Build the complete message list for the LLM
+    # Order: System prompt → conversation history → current user message → observation (if any)
+    messages: list = [SystemMessage(content=AGENT_PROMPT)]
+    
+    # Add conversation history (previous HumanMessage/AIMessage pairs)
+    messages.extend(memory.messages)
+    
+    # Add the current user message
+    current_message = HumanMessage(content=state["message"])
+    messages.append(current_message)
+    
+    # Store the user message in conversation history
+    memory.add_message(current_message)
+    
+    # Add observation as a separate message if present
+    if state["observation"]:
+        messages.append(HumanMessage(content=f"Observation:\n\n{json.dumps(state['observation'])}"))
 
-Observation:
+    response = llm.invoke(messages)
 
-{json.dumps(state["observation"])}
-"""
-
-    response = llm.invoke([HumanMessage(content=prompt)])
+    # Store the assistant response in conversation history
+    memory.add_message(AIMessage(content=response.content))
 
     action = _build_action_from_llm(response.content)
 
