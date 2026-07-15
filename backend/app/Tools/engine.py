@@ -11,6 +11,8 @@ and provides clean security-focused error messages.
 from typing import Any
 
 from app.Tools.registry import registry
+from app.Observability.trace import measure_time, calculate_duration
+from app.Observability.manager import observability_manager
 
 # Maximum allowed length for a tool name string.
 _MAX_TOOL_NAME_LENGTH: int = 64
@@ -145,18 +147,39 @@ class ToolEngine:
             ) from e
 
         # Execute the tool with validated arguments
+        start_time = measure_time()
         try:
-            return tool.execute(**kwargs)
+            result = tool.execute(**kwargs)
         except ValueError as e:
             # Re-raise tool-level validation errors as-is
             # (they are already clean security-focused messages)
+            observability_manager.record_tool_call(
+                tool_name=tool_name,
+                duration_ms=calculate_duration(start_time),
+                success=False,
+                error=str(e),
+            )
             raise
         except Exception:
-            raise ValueError(
+            error_msg = (
                 f"An error occurred while executing "
                 f"the '{tool_name}' tool. Please check your "
                 "inputs and try again."
             )
+            observability_manager.record_tool_call(
+                tool_name=tool_name,
+                duration_ms=calculate_duration(start_time),
+                success=False,
+                error=error_msg,
+            )
+            raise ValueError(error_msg)
+        else:
+            observability_manager.record_tool_call(
+                tool_name=tool_name,
+                duration_ms=calculate_duration(start_time),
+                success=True,
+            )
+            return result
 
 
 engine = ToolEngine()

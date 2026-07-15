@@ -15,6 +15,7 @@ from langchain_core.messages import BaseMessage
 from app.Memory.embeddings.manager import EmbeddingManager
 from app.Memory.persistence.sqlite_backend import SQLitePersistenceBackend
 from app.Memory.semantic.ranker import MemoryRanker, RetrievedMemory
+from app.Observability.manager import observability_manager
 
 logger = logging.getLogger(__name__)
 
@@ -166,6 +167,9 @@ class SemanticRetriever:
 
         # Extract messages from ranked memories
         top_messages = [memory.message for memory in ranked_memories]
+
+        # Record semantic memory hits for the active trace.
+        observability_manager.record_semantic_hit(len(top_messages))
 
         logger.info(
             "Retrieved and ranked %d relevant memories for session %s (threshold=%.2f, top_k=%d)",

@@ -25,6 +25,8 @@ from app.Models.action import ParsedAction, FinalAction
 from app.Tools.registry import registry
 
 from app.LangGraph.state import State
+from app.Observability.trace import measure_time, calculate_duration
+from app.Observability.manager import observability_manager
 
 
 def _validate_tool_name_against_registry(tool_name: str) -> bool:
@@ -211,17 +213,15 @@ def _build_action_from_llm(raw_content: str) -> dict:
 
 
 def agent(state: State):
-    """Call the LLM, parse the response as a JSON action, and update state.
+    """Execute the current plan step or generate a final response.
+
+    If a plan exists with pending steps, executes the current step
+    by calling the LLM with plan context. If no plan exists or all
+    steps are completed, generates a final response.
 
     Every LLM response is validated against the ParsedAction Pydantic
     model before being used. Invalid responses are replaced with a safe
-    final action containing the raw LLM output. The final action dict
-    is additionally validated for structural integrity before it enters
-    the graph state.
-
-    Conversation history is loaded from MemoryManager, the current user
-    message is appended, and the assistant response is saved after generation.
-    This ensures complete session isolation and conversation continuity.
+    final action containing the raw LLM output.
 
     Args:
         state: The current LangGraph state.
@@ -232,22 +232,46 @@ def agent(state: State):
         is returned with the raw LLM output instead of raising an
         exception, ensuring the graph continues normally.
     """
+    start_time = measure_time()
     session_id = state["session_id"]
 
     # Load conversation history for this session
-    # MemoryManager handles missing sessions gracefully by creating new history
     memory = memory_manager.get_conversation(session_id)
 
     # Retrieve relevant memories using semantic similarity
-    # MemoryManager is the ONLY public interface for semantic retrieval
+    mem_start = measure_time()
     relevant_memories = memory_manager.get_relevant_memories(
         session_id=session_id,
         query=state["message"],
         top_k=5,
     )
+    mem_duration = calculate_duration(mem_start)
+
+    # Record memory + semantic retrieval activity for the trace.
+    summary_used = bool(
+        memory.messages
+        and memory.messages[0].__class__.__name__ == "SystemMessage"
+        and "Conversation Summary:" in memory.messages[0].content
+    )
+    observability_manager.record_memory_info(
+        conversation_messages=len(memory.messages),
+        summary_used=summary_used,
+        semantic_memories=len(relevant_memories),
+        retrieval_latency_ms=mem_duration,
+    )
+
+    # Check if there's an active plan
+    plan = state.get("plan", {})
+    plan_steps = plan.get("steps", [])
+    current_step = None
+
+    # Find the current pending step
+    for step in plan_steps:
+        if step.get("status") == "pending":
+            current_step = step
+            break
 
     # Build the complete message list for the LLM
-    # Order: System prompt → conversation history (summary + recent) → relevant memories → current user message → observation
     messages: list = [SystemMessage(content=AGENT_PROMPT)]
 
     # Add conversation history (summary + recent messages)
@@ -259,6 +283,15 @@ def agent(state: State):
         for msg in relevant_memories:
             memories_text += f"- {msg.content}\n"
         messages.append(SystemMessage(content=memories_text.strip()))
+
+    # Add plan context if executing a plan
+    if current_step:
+        plan_context = (
+            f"Current Plan Goal: {plan.get('goal', '')}\n"
+            f"Current Step ({current_step['id']}/{len(plan_steps)}): {current_step['description']}\n"
+            f"Tool to use: {current_step.get('tool', 'none') if current_step.get('tool') else 'none'}"
+        )
+        messages.append(SystemMessage(content=plan_context))
 
     # Add the current user message
     current_message = HumanMessage(content=state["message"])
@@ -273,40 +306,51 @@ def agent(state: State):
 
     response = llm.invoke(messages)
 
+    # Record LLM usage (model name + latency) for the trace.
+    observability_manager.record_llm_usage(
+        model_name=getattr(llm, "model", "") or "",
+        latency_ms=calculate_duration(start_time),
+    )
+
     # Store the assistant response in conversation history
     memory.add_message(AIMessage(content=response.content))
 
     action = _build_action_from_llm(response.content)
 
     # Structural validation before the action enters the graph state.
-    # This provides defense-in-depth: even if Pydantic validation and
-    # registry checks pass, the final dict must still satisfy the
-    # structural invariants required by downstream nodes.
-    #
-    # If validation fails, a safe final action is returned with the
-    # raw LLM output as the response. This prevents malformed LLM
-    # output from causing HTTP 500 errors — the graph continues
-    # normally and the user always receives a response.
     try:
         _validate_action_dict(action)
     except ValueError:
+        observability_manager.record_duration("agent", calculate_duration(start_time))
         return {
             "action": {"type": "final", "response": response.content},
             "response": response.content,
         }
 
     if action.get("type") == "final":
+        observability_manager.record_duration("agent", calculate_duration(start_time))
         return {
             "action": action,
             "response": action.get("response", response.content),
         }
 
     if action.get("type") == "tool":
+        # Mark current step as in_progress
+        updated_plan = state.get("plan", {})
+        if current_step and updated_plan:
+            for step in updated_plan.get("steps", []):
+                if step.get("id") == current_step["id"]:
+                    step["status"] = "in_progress"
+                    break
+
+        observability_manager.record_duration("agent", calculate_duration(start_time))
         return {
             "action": action,
+            "plan": updated_plan,
         }
 
-    # Defensive fallback — should not reach here if _build_action_from_llm is correct
+    # Defensive fallback
+    observability_manager.record_duration("agent", calculate_duration(start_time))
     return {
         "action": {"type": "final", "response": response.content},
         "response": response.content,

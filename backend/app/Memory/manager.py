@@ -1,3 +1,6 @@
+import logging
+from typing import Any
+
 from langchain_core.messages import BaseMessage
 
 from app.Memory.storage import storage
@@ -6,6 +9,11 @@ from app.Memory.summarization import SummaryManager
 from app.Memory.persistence import SQLitePersistenceBackend
 from app.Memory.embeddings import EmbeddingManager, LocalEmbeddingProvider
 from app.Memory.semantic import SemanticRetriever
+from app.Config.settings import PERSISTENCE_DB_PATH
+from app.Observability.trace import measure_time, calculate_duration
+from app.Observability.manager import observability_manager
+
+logger = logging.getLogger(__name__)
 
 
 # Window configuration
@@ -18,10 +26,6 @@ WINDOW_SIZE: int = 10
 SUMMARIZATION_THRESHOLD: int = 20
 # Number of recent messages to preserve when summarizing
 SUMMARIZATION_KEEP_RECENT: int = 10
-
-# Persistence configuration
-# Path to SQLite database for persistent memory
-PERSISTENCE_DB_PATH: str = "./data/memory.db"
 
 # Embedding configuration
 # Whether to enable embedding generation
@@ -67,6 +71,7 @@ class MemoryManager:
         Returns:
             WindowedChatMessageHistory instance with automatic windowing, summarization, and persistence.
         """
+        start_time = measure_time()
         # Get the underlying chat history from storage
         history = storage.get_memory(session_id)
 
@@ -91,6 +96,7 @@ class MemoryManager:
             summary = self._persistence.load_summary(session_id)
 
         # Wrap it with windowing, summarization, persistence, and embeddings
+        observability_manager.record_duration("memory", calculate_duration(start_time))
         return WindowedChatMessageHistory(
             window_manager=self._window_manager,
             history=history,
@@ -123,17 +129,66 @@ class MemoryManager:
             Returns empty list if no messages meet the threshold or if
             embeddings are not enabled.
         """
+        start_time = measure_time()
         retriever = SemanticRetriever(
             embedding_manager=self._embedding_manager,
             persistence=self._persistence,
             similarity_threshold=SEMANTIC_SIMILARITY_THRESHOLD,
         )
 
-        return retriever.retrieve(
+        results = retriever.retrieve(
             session_id=session_id,
             query=query,
             top_k=top_k,
         )
+        observability_manager.record_duration(
+            "semantic", calculate_duration(start_time)
+        )
+        return results
+
+    def save_execution_state(
+        self, session_id: str, execution_state: dict[str, Any]
+    ) -> None:
+        """Save execution state for a session.
+
+        Persists the current plan execution state to SQLite for recovery
+        across requests.
+
+        Args:
+            session_id: Unique session identifier.
+            execution_state: Execution state dictionary.
+        """
+        self._persistence.save_execution_state(session_id, execution_state)
+        logger.debug(
+            "Saved execution state for session %s (status=%s)",
+            session_id,
+            execution_state.get("execution_status", "unknown"),
+        )
+
+    def load_execution_state(self, session_id: str) -> dict[str, Any] | None:
+        """Load execution state for a session.
+
+        Retrieves persisted execution state from SQLite.
+
+        Args:
+            session_id: Unique session identifier.
+
+        Returns:
+            Execution state dictionary, or None if not found.
+        """
+        return self._persistence.load_execution_state(session_id)
+
+    def clear_execution_state(self, session_id: str) -> None:
+        """Clear execution state for a session.
+
+        Removes execution state from SQLite when execution completes
+        or is cancelled.
+
+        Args:
+            session_id: Unique session identifier.
+        """
+        self._persistence.clear_execution_state(session_id)
+        logger.debug("Cleared execution state for session %s", session_id)
 
 
 memory_manager = MemoryManager()

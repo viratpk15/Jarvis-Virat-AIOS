@@ -50,10 +50,11 @@ class SQLitePersistenceBackend:
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            # Sessions table
+            # Sessions table (user_id binds sessions to authenticated users)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS sessions (
                     session_id TEXT PRIMARY KEY,
+                    user_id INTEGER,
                     summary TEXT,
                     created_at TEXT NOT NULL,
                     last_accessed TEXT NOT NULL
@@ -103,6 +104,20 @@ class SQLitePersistenceBackend:
                     session_id TEXT PRIMARY KEY,
                     embedding BLOB NOT NULL,
                     created_at TEXT NOT NULL,
+                    FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+                )
+            """)
+
+            # Create table for execution state
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS execution_state (
+                    session_id TEXT PRIMARY KEY,
+                    current_plan TEXT,
+                    current_step INTEGER,
+                    completed_steps TEXT NOT NULL,
+                    pending_steps TEXT NOT NULL,
+                    execution_status TEXT NOT NULL DEFAULT 'idle',
+                    updated_at TEXT NOT NULL,
                     FOREIGN KEY (session_id) REFERENCES sessions(session_id)
                 )
             """)
@@ -340,6 +355,47 @@ class SQLitePersistenceBackend:
             )
             return cursor.fetchone()[0] > 0
 
+    def get_session_owner(self, session_id: str) -> int | None:
+        """Get the user_id that owns a session.
+
+        Args:
+            session_id: Unique session identifier.
+
+        Returns:
+            The owner's user_id, or None if not set.
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT user_id FROM sessions WHERE session_id = ?",
+                (session_id,)
+            )
+            row = cursor.fetchone()
+            return row[0] if row and row[0] else None
+
+    def bind_session_to_user(self, session_id: str, user_id: int) -> None:
+        """Bind a session to a user.
+
+        Creates the session if it doesn't exist, or updates the user_id.
+
+        Args:
+            session_id: Unique session identifier.
+            user_id: The user's database ID.
+        """
+        now = datetime.utcnow().isoformat()
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO sessions
+                    (session_id, user_id, summary, created_at, last_accessed)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (session_id, user_id, None, now, now)
+            )
+            conn.commit()
+
     def save_embedding(self, session_id: str, position: int, embedding: list[float]) -> None:
         """Save embedding for a message.
 
@@ -448,3 +504,84 @@ class SQLitePersistenceBackend:
                 result.append((position, message, embedding))
 
             return result
+
+    def save_execution_state(self, session_id: str, execution_state: dict[str, Any]) -> None:
+        """Save execution state for a session.
+
+        Args:
+            session_id: Unique session identifier.
+            execution_state: Execution state dictionary.
+        """
+        now = datetime.utcnow().isoformat()
+        current_plan = json.dumps(execution_state.get("current_plan"))
+        completed_steps = json.dumps(execution_state.get("completed_steps", []))
+        pending_steps = json.dumps(execution_state.get("pending_steps", []))
+        current_step = execution_state.get("current_step")
+        execution_status = execution_state.get("execution_status", "idle")
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO execution_state (
+                    session_id, current_plan, current_step, completed_steps,
+                    pending_steps, execution_status, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    session_id,
+                    current_plan,
+                    current_step,
+                    completed_steps,
+                    pending_steps,
+                    execution_status,
+                    now,
+                )
+            )
+            conn.commit()
+
+    def load_execution_state(self, session_id: str) -> dict[str, Any] | None:
+        """Load execution state for a session.
+
+        Args:
+            session_id: Unique session identifier.
+
+        Returns:
+            Execution state dictionary, or None if not found.
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT current_plan, current_step, completed_steps, pending_steps, execution_status "
+                "FROM execution_state WHERE session_id = ?",
+                (session_id,)
+            )
+            row = cursor.fetchone()
+
+            if not row:
+                return None
+
+            current_plan, current_step, completed_steps, pending_steps, execution_status = row
+
+            return {
+                "current_plan": json.loads(current_plan) if current_plan else None,
+                "current_step": current_step,
+                "completed_steps": json.loads(completed_steps) if completed_steps else [],
+                "pending_steps": json.loads(pending_steps) if pending_steps else [],
+                "execution_status": execution_status,
+            }
+
+    def clear_execution_state(self, session_id: str) -> None:
+        """Clear execution state for a session.
+
+        Args:
+            session_id: Unique session identifier.
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM execution_state WHERE session_id = ?",
+                (session_id,)
+            )
+            conn.commit()
