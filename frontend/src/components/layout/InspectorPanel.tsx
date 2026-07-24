@@ -8,7 +8,9 @@ import {
   Database,
   SearchCode,
   Layers,
-  PanelRightClose
+  PanelRightClose,
+  FileText,
+  Bookmark
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -19,7 +21,7 @@ interface InspectorPanelProps {
   onToggle: () => void
 }
 
-type TabType = "thoughts" | "logs" | "tools" | "debugger" | "context" | "memory"
+type TabType = "thoughts" | "tools" | "debugger" | "context" | "memory" | "files" | "references"
 
 export const InspectorPanel: React.FC<InspectorPanelProps> = ({ isOpen, onToggle }) => {
   const [activeTab, setActiveTab] = useState<TabType>("thoughts")
@@ -35,8 +37,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({ isOpen, onToggle
   const tabs = [
     { id: "context", name: "Context", icon: Compass },
     { id: "memory", name: "Memory", icon: Database },
+    { id: "files", name: "Files", icon: FileText },
+    { id: "references", name: "References", icon: Bookmark },
     { id: "thoughts", name: "AI Thoughts", icon: Sparkles },
-    { id: "logs", name: "Logs", icon: Terminal },
     { id: "tools", name: "Tool Output", icon: SearchCode },
     { id: "debugger", name: "Debugger", icon: Activity }
   ]
@@ -123,15 +126,75 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({ isOpen, onToggle
             </div>
           </div>
         )
-      case "logs":
+      case "files":
         return (
-          <div className="space-y-2 font-mono text-[10px] bg-black/30 p-3 rounded-lg border border-border/50 h-[420px] overflow-y-auto">
-            <div className="text-emerald-400">[info] 20:24:38 Kernel listening on port 5173</div>
-            <div className="text-muted-foreground">[debug] Loading workspace schema mapping...</div>
-            <div className="text-violet-400">[llm] Sending 1,402 prompt tokens to Gemini API</div>
-            <div className="text-muted-foreground">[debug] Vector caching buffer synchronized (15ms)</div>
-            <div className="text-emerald-400">[info] Active socket connection established</div>
-            <div className="text-amber-500">[warn] High memory load on vector buffer cache</div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground border-b border-border/40 pb-1.5 uppercase font-semibold">
+              <span>Attached File</span>
+              <span>Size</span>
+            </div>
+            <div className="space-y-2 font-mono text-xs">
+              <div className="p-2.5 bg-secondary/35 hover:bg-secondary/65 border border-border/50 rounded-lg flex items-center justify-between gap-3 group transition-colors">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="h-4 w-4 text-primary shrink-0" />
+                  <span className="truncate font-semibold text-foreground">src/App.tsx</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground shrink-0">2.4 KB</span>
+              </div>
+              <div className="p-2.5 bg-secondary/35 hover:bg-secondary/65 border border-border/50 rounded-lg flex items-center justify-between gap-3 group transition-colors">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="h-4 w-4 text-primary shrink-0" />
+                  <span className="truncate font-semibold text-foreground">src/main.tsx</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground shrink-0">1.1 KB</span>
+              </div>
+              <div className="p-2.5 bg-secondary/35 hover:bg-secondary/65 border border-border/50 rounded-lg flex items-center justify-between gap-3 group transition-colors">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="h-4 w-4 text-primary shrink-0" />
+                  <span className="truncate font-semibold text-foreground">AppShell.tsx</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground shrink-0">22.8 KB</span>
+              </div>
+              <div className="p-2.5 bg-secondary/35 hover:bg-secondary/65 border border-border/50 rounded-lg flex items-center justify-between gap-3 group transition-colors">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="h-4 w-4 text-primary shrink-0" />
+                  <span className="truncate font-semibold text-foreground">package.json</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground shrink-0">976 B</span>
+              </div>
+            </div>
+          </div>
+        )
+      case "references":
+        return (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground border-b border-border/40 pb-1.5 uppercase font-semibold">
+              <span>Active Reference Context</span>
+              <span>Weight</span>
+            </div>
+            <div className="space-y-2 text-xs">
+              <div className="p-2.5 bg-secondary/35 border border-border/50 rounded-lg flex flex-col gap-1 font-mono">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-primary font-semibold truncate text-[11px]">docs/06_MEMORY.md</span>
+                  <span className="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1 py-0.5 rounded leading-none">CRITICAL</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground">Local schema for context vectors managers.</span>
+              </div>
+              <div className="p-2.5 bg-secondary/35 border border-border/50 rounded-lg flex flex-col gap-1 font-mono">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-primary font-semibold truncate text-[11px]">.agents/AGENTS.md</span>
+                  <span className="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1 py-0.5 rounded leading-none">CRITICAL</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground">Standard AI Operating System constitution loaded.</span>
+              </div>
+              <div className="p-2.5 bg-secondary/35 border border-border/50 rounded-lg flex flex-col gap-1 font-mono">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-primary font-semibold truncate text-[11px]">web: react-19-motion</span>
+                  <span className="text-[9px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1 py-0.5 rounded leading-none">HIGH</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground">Crawl summary of standard framer-motion transitions.</span>
+              </div>
+            </div>
           </div>
         )
       case "tools":

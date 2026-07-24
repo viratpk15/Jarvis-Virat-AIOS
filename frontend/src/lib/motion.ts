@@ -88,3 +88,22 @@ export const dashboardItemVariants: Variants = {
   animate: { opacity: 1, x: 0, transition: easeTransition }
 }
 
+export const messageVariants: Variants = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0, transition: easeTransition }
+}
+
+export const attachmentVariants: Variants = {
+  initial: { opacity: 0, scale: 0.85 },
+  animate: { opacity: 1, scale: 1, transition: springTransition },
+  exit: { opacity: 0, scale: 0.85, transition: { duration: 0.15 } }
+}
+
+export const cursorVariants: Variants = {
+  blink: {
+    opacity: [1, 0, 1],
+    transition: { duration: 0.8, repeat: Infinity, ease: "linear" }
+  }
+}
+
+

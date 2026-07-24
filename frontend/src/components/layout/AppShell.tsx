@@ -487,8 +487,14 @@ export default function AppShell() {
         <div className="flex-1 flex overflow-hidden w-full relative">
           
           {/* Main scroll viewport */}
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 h-full">
-            <main className="max-w-6xl mx-auto w-full pb-8">
+          <div className={cn(
+            "flex-1 h-full",
+            location.pathname === "/workspace" ? "overflow-hidden" : "overflow-y-auto px-4 sm:px-6 py-6"
+          )}>
+            <main className={cn(
+              "w-full h-full",
+              location.pathname === "/workspace" ? "max-w-none" : "max-w-6xl mx-auto pb-8"
+            )}>
               <AnimatePresence mode="wait">
                 <motion.div
                   key={location.pathname}
@@ -500,6 +506,7 @@ export default function AppShell() {
                     animate: { opacity: 1, y: 0, transition: easeTransition },
                     exit: { opacity: 0, y: -10, transition: { duration: 0.15 } }
                   }}
+                  className={cn(location.pathname === "/workspace" ? "h-full w-full" : "")}
                 >
                   <Outlet />
                 </motion.div>
