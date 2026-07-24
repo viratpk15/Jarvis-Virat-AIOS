@@ -62,3 +62,29 @@ export const commandPaletteItemVariants: Variants = {
   hover: { backgroundColor: "rgba(255, 255, 255, 0.08)", scale: 1.01 },
   tap: { scale: 0.99 }
 }
+
+export const dashboardGridVariants: Variants = {
+  initial: { opacity: 0 },
+  animate: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.03
+    }
+  }
+}
+
+export const dashboardCardVariants: Variants = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0, transition: easeTransition },
+  hover: {
+    y: -3,
+    transition: { duration: 0.2, ease: "easeOut" }
+  },
+  tap: { scale: 0.985 }
+}
+
+export const dashboardItemVariants: Variants = {
+  initial: { opacity: 0, x: -8 },
+  animate: { opacity: 1, x: 0, transition: easeTransition }
+}
+

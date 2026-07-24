@@ -141,6 +141,14 @@ export default function AppShell() {
     }
   }, [])
 
+  // Listen for custom palette open trigger event
+  useEffect(() => {
+    const handleOpenPalette = () => setPaletteOpen(true)
+    window.addEventListener("open-command-palette", handleOpenPalette)
+    return () => window.removeEventListener("open-command-palette", handleOpenPalette)
+  }, [])
+
+
   // Sync state toggles to LocalStorage
   useEffect(() => {
     localStorage.setItem("sidebar_collapsed", sidebarCollapsed.toString())
