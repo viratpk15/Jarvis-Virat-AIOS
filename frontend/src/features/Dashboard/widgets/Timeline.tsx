@@ -101,7 +101,7 @@ export const Timeline: React.FC = () => {
               <div key={ev.id} className="relative group">
                 
                 {/* Timeline Dot with Icon */}
-                <div className={`absolute -left-[35px] top-0.5 p-1 rounded-md border flex items-center justify-center shadow-sm shrink-0 transition-transform duration-200 group-hover:scale-105 ${getEventBadgeColor(ev.type)}`}>
+                <div className={`absolute -left-8.75 top-0.5 p-1 rounded-md border flex items-center justify-center shadow-sm shrink-0 transition-transform duration-200 group-hover:scale-105 ${getEventBadgeColor(ev.type)}`}>
                   {getEventIcon(ev.type)}
                 </div>
 

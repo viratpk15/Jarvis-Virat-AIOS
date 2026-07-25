@@ -26,6 +26,10 @@ from app.Config.settings import CHAT_RATE_LIMIT
 
 router = APIRouter()
 
+# Include conversation routes
+from app.FastAPI.routes_conversations import router as conversations_router
+router.include_router(conversations_router)
+
 
 @router.get(
     "/health",

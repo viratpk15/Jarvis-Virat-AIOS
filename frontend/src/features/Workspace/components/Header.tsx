@@ -82,7 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           ) : (
             <div className="flex items-center gap-2 min-w-0 group/title">
-              <h1 className="font-bold text-xs sm:text-sm text-foreground truncate max-w-[240px] sm:max-w-md leading-none">
+              <h1 className="font-bold text-xs sm:text-sm text-foreground truncate max-w-60 sm:max-w-md leading-none">
                 {title}
               </h1>
               <button
@@ -114,7 +114,7 @@ export const Header: React.FC<HeaderProps> = ({
           {model}
         </Badge>
 
-        <div className="h-4 w-[1px] bg-border/60 hidden sm:block" />
+        <div className="h-4 w-px bg-border/60 hidden sm:block" />
 
         {/* Action icons */}
         <div className="flex items-center gap-0.5">

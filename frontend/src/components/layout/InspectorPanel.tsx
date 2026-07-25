@@ -287,7 +287,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({ isOpen, onToggle
         </div>
 
         {/* Resize Handle (Mock visual indicator) */}
-        <div className="absolute top-0 left-0 w-[1px] h-full bg-border/40 hover:bg-primary/50 cursor-ew-resize z-50 transition-colors" />
+        <div className="absolute top-0 left-0 w-px h-full bg-border/40 hover:bg-primary/50 cursor-ew-resize z-50 transition-colors" />
 
         {/* Tab Switcher Grid */}
         <div className="grid grid-cols-3 gap-1 p-2 bg-secondary/20 border-b border-border/50 shrink-0">

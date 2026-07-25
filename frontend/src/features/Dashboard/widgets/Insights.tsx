@@ -78,7 +78,7 @@ export const Insights: React.FC = () => {
                   </div>
 
                   {/* Sparkline Vector Index plot */}
-                  <div className="w-[120px] h-[40px] shrink-0">
+                  <div className="w-30 h-10 shrink-0">
                     <svg viewBox="0 0 200 50" className="w-full h-full overflow-visible">
                       <path
                         d={sparklineData}

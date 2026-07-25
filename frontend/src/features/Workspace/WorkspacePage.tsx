@@ -1,110 +1,35 @@
 import React, { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Menu, ChevronLeft, ChevronRight } from "lucide-react"
+import { Menu, ChevronLeft, ChevronRight, AlertCircle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sidebar } from "./components/Sidebar"
 import { Header } from "./components/Header"
 import { MessageArea } from "./components/MessageArea"
 import { Composer } from "./components/Composer"
 import { dashboardGridVariants } from "@/lib/motion"
-
-interface Message {
-  id: string
-  role: "user" | "assistant" | "system"
-  content: string
-  timestamp: string
-}
-
-interface Attachment {
-  id: string
-  name: string
-  type: "pdf" | "image" | "zip" | "markdown" | "code"
-}
-
-interface Conversation {
-  id: string
-  title: string
-  preview: string
-  time: string
-  pinned: boolean
-  model: string
-  unread: boolean
-  group: "Today" | "Yesterday" | "Last Week" | "Older"
-  messages: Message[]
-}
+import {
+  useConversationsQuery,
+  useSendMessageMutation,
+  useCreateConversationMutation,
+  useDeleteConversationMutation,
+  useRenameConversationMutation,
+  useTogglePinMutation
+} from "@/services/queries/chat"
+import type { Conversation, Attachment } from "@/types/api"
 
 export default function WorkspacePage() {
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [selectedId, setSelectedId] = useState<string | null>("c1")
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [inputText, setInputText] = useState("")
 
-  // Simulation states
-  const [isThinking, setIsThinking] = useState(false)
-  const [isStreaming, setIsStreaming] = useState(false)
-  const [streamingText, setStreamingText] = useState("")
-
-  const [conversations, setConversations] = useState<Conversation[]>([
-    {
-      id: "c1",
-      title: "Debug FastAPI memory leak in vector index cache",
-      preview: "I analyzed the memory dump files. The issue stems from the cache registry indexer holding strong references...",
-      time: "10m ago",
-      pinned: true,
-      model: "Gemini 2.5 Pro",
-      unread: false,
-      group: "Today",
-      messages: [
-        {
-          id: "m1",
-          role: "user",
-          content: "Can you analyze why our FastAPI kernel memory builds up after index cache sync loops?",
-          timestamp: "10:20 AM"
-        },
-        {
-          id: "m2",
-          role: "assistant",
-          content: "I analyzed the memory dump files. The issue stems from the cache registry indexer holding strong references to old context vectors rather than utilizing weak reference caches.\n\nHere is the offending code block inside `MemoryManager`:\n```python\nclass MemoryManager:\n    def __init__(self):\n        self._registry = {} # Holds strong references\n\n    def sync_vectors(self, vectors):\n        for vec in vectors:\n            self._registry[vec.id] = vec # Prevents garbage collection\n```\n\nTo resolve this memory leak, we should refactor it using Python's `weakref` dict:\n```python\nimport weakref\n\nclass MemoryManager:\n    def __init__(self):\n        self._registry = weakref.WeakValueDictionary() # Resolves memory leak\n```\nThis enables Python's garbage collector to release vectors once they are dereferenced elsewhere.",
-          timestamp: "10:22 AM"
-        }
-      ]
-    },
-    {
-      id: "c2",
-      title: "Integrate framer-motion page variants in app shell",
-      preview: "We should declare a centralized dashboardGridVariants inside src/lib/motion.ts that cascades...",
-      time: "2h ago",
-      pinned: true,
-      model: "Gemini 2.5 Flash",
-      unread: true,
-      group: "Today",
-      messages: [
-        {
-          id: "m3",
-          role: "user",
-          content: "How do we define standardized staggered transitions for our home dashboard widgets?",
-          timestamp: "8:10 AM"
-        },
-        {
-          id: "m4",
-          role: "assistant",
-          content: "We should declare a centralized `dashboardGridVariants` inside `src/lib/motion.ts` that cascades entry offsets to all children elements. We can then apply staggered transitions like this:\n```typescript\nexport const dashboardGridVariants: Variants = {\n  initial: { opacity: 0 },\n  animate: {\n    opacity: 1,\n    transition: {\n      staggerChildren: 0.03\n    }\n  }\n}\n```\nThis is fully configured and ready for reuse across all widgets.",
-          timestamp: "8:12 AM"
-        }
-      ]
-    },
-    {
-      id: "c3",
-      title: "Draft system prompt instructions for agents",
-      preview: "Initialize the OS guide using AGENTS.md rules. Specify LangGraph composition...",
-      time: "Yesterday",
-      pinned: false,
-      model: "Gemini 2.5 Pro",
-      unread: false,
-      group: "Yesterday",
-      messages: []
-    }
-  ])
+  // Real backend queries & mutations
+  const { data: conversations = [], isLoading: isLoadingConvs, isError: isConvError, error: convError, refetch } = useConversationsQuery()
+  const sendMessageMutation = useSendMessageMutation()
+  const createConvMutation = useCreateConversationMutation()
+  const deleteConvMutation = useDeleteConversationMutation()
+  const renameConvMutation = useRenameConversationMutation()
+  const togglePinMutation = useTogglePinMutation()
 
   // Track window size resize events for panels layout responsive boundaries
   useEffect(() => {
@@ -117,57 +42,51 @@ export default function WorkspacePage() {
       }
     }
     window.addEventListener("resize", handleResize)
-    // Run once on mount
     handleResize()
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
-  const selectedChat = conversations.find((c) => c.id === selectedId) || null
+  // Auto-select initial conversation on load
+  useEffect(() => {
+    if (conversations.length > 0 && (!selectedId || !conversations.some((c) => c.id === selectedId))) {
+      setSelectedId(conversations[0].id)
+    }
+  }, [conversations, selectedId])
+
+  const selectedChat: Conversation | null = conversations.find((c) => c.id === selectedId) || (conversations[0] ?? null)
 
   const handleSelectChat = (id: string) => {
     setSelectedId(id)
-    // Clear unread mark
-    setConversations((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, unread: false } : c))
-    )
   }
 
   const handleNewChat = () => {
-    const newChat: Conversation = {
-      id: `c-${Date.now()}`,
-      title: "New Conversation",
-      preview: "Session initialized. Cognitive engine standby.",
-      time: "Just now",
-      pinned: false,
-      model: "Gemini 2.5 Pro",
-      unread: false,
-      group: "Today",
-      messages: []
-    }
-    setConversations((prev) => [newChat, ...prev])
-    setSelectedId(newChat.id)
+    createConvMutation.mutate(undefined, {
+      onSuccess: (newConv) => {
+        setSelectedId(newConv.id)
+      }
+    })
   }
 
   const handleTogglePin = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
-    setConversations((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, pinned: !c.pinned } : c))
-    )
+    togglePinMutation.mutate(id)
   }
 
   const handleDeleteChat = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
-    setConversations((prev) => prev.filter((c) => c.id !== id))
-    if (selectedId === id) {
-      setSelectedId(null)
-    }
+    deleteConvMutation.mutate(id, {
+      onSuccess: () => {
+        if (selectedId === id) {
+          const remaining = conversations.filter((c) => c.id !== id)
+          setSelectedId(remaining.length > 0 ? remaining[0].id : null)
+        }
+      }
+    })
   }
 
   const handleRenameChat = (newTitle: string) => {
     if (!selectedId) return
-    setConversations((prev) =>
-      prev.map((c) => (c.id === selectedId ? { ...c, title: newTitle } : c))
-    )
+    renameConvMutation.mutate({ sessionId: selectedId, title: newTitle })
   }
 
   const handleExport = (format: "markdown" | "json") => {
@@ -194,103 +113,16 @@ export default function WorkspacePage() {
     URL.revokeObjectURL(url)
   }
 
-  // Submit new prompt and simulate reply stream
+  // Submit new prompt to real backend /chat API
   const handleSend = (text: string, attachedFiles: Attachment[]) => {
-    if (!selectedId || (!text.trim() && attachedFiles.length === 0)) return
+    const activeSessionId = selectedId || selectedChat?.id
+    if (!activeSessionId || (!text.trim() && attachedFiles.length === 0)) return
 
-    const timeString = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    
-    // Construct attachments string if any exist
-    let fullContent = text
-    if (attachedFiles.length > 0) {
-      const filesStr = attachedFiles.map((f) => `\`${f.name}\` (${f.type})`).join(", ")
-      fullContent = `[Attached: ${filesStr}]\n\n${text}`
-    }
-
-    const userMsg: Message = {
-      id: `m-${Date.now()}`,
-      role: "user",
-      content: fullContent,
-      timestamp: timeString
-    }
-
-    // Update messages list
-    setConversations((prev) =>
-      prev.map((c) => {
-        if (c.id === selectedId) {
-          const updatedMsgs = [...c.messages, userMsg]
-          return {
-            ...c,
-            preview: text || `Uploaded ${attachedFiles.length} file(s)`,
-            time: "Just now",
-            messages: updatedMsgs
-          }
-        }
-        return c
-      })
-    )
-
-    // Trigger simulated thinking phase
-    setIsThinking(true)
-
-    // Simulate logs in Inspector
-    const logsEvent = new CustomEvent("inspector-log", {
-      detail: { text: `[LLM_ENGINE] Inference request received. Prompt length: ${text.length} chars.` }
+    sendMessageMutation.mutate({
+      session_id: activeSessionId,
+      message: text,
+      attachedFiles
     })
-    window.dispatchEvent(logsEvent)
-
-    setTimeout(() => {
-      setIsThinking(false)
-      setIsStreaming(true)
-
-      const replyTemplate = `I received your workspace instruction regarding: "${text}".
-
-Let me scan the active context registry files...
-All virtual subroutines are fully nominal. Here is the recommended execution path:
-1. **Load dependency tree**: Scans import mappings inside \`src/App.tsx\`.
-2. **Compile type verification suites**: Performs type assertions checking.
-3. **Execute lint suites**: Runs local \`oxlint\` checks.
-
-Let me know if you would like me to compile this code or start a test suite run.`
-
-      let currentText = ""
-      const words = replyTemplate.split(" ")
-      let wordIndex = 0
-
-      const timer = setInterval(() => {
-        if (wordIndex < words.length) {
-          currentText += (wordIndex === 0 ? "" : " ") + words[wordIndex]
-          setStreamingText(currentText)
-          wordIndex++
-        } else {
-          clearInterval(timer)
-          setIsStreaming(false)
-          setStreamingText("")
-
-          // Push the final assistant reply
-          const assistantMsg: Message = {
-            id: `m-${Date.now() + 1}`,
-            role: "assistant",
-            content: replyTemplate,
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-          }
-
-          setConversations((prev) =>
-            prev.map((c) => {
-              if (c.id === selectedId) {
-                return {
-                  ...c,
-                  preview: replyTemplate.substring(0, 80) + "...",
-                  time: "Just now",
-                  messages: [...c.messages, assistantMsg]
-                }
-              }
-              return c
-            })
-          )
-        }
-      }, 70) // Fast word stream animation
-    }, 2000)
   }
 
   const handleSelectPrompt = (prompt: string) => {
@@ -318,7 +150,7 @@ Let me know if you would like me to compile this code or start a test suite run.
           >
             <Sidebar
               conversations={conversations}
-              selectedId={selectedId}
+              selectedId={selectedId || (selectedChat?.id ?? null)}
               onSelect={(id) => {
                 handleSelectChat(id)
                 if (isMobile) setSidebarOpen(false)
@@ -338,11 +170,35 @@ Let me know if you would like me to compile this code or start a test suite run.
         {!isMobile && (
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="absolute left-0 top-[200px] z-50 h-10 w-4 rounded-r-md border border-l-0 border-border/80 bg-sidebar hover:bg-secondary text-muted-foreground flex items-center justify-center cursor-pointer transition-colors shadow-sm focus:outline-none"
+            className="absolute left-0 top-50 z-50 h-10 w-4 rounded-r-md border border-l-0 border-border/80 bg-sidebar hover:bg-secondary text-muted-foreground flex items-center justify-center cursor-pointer transition-colors shadow-sm focus:outline-none"
             title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
           >
             {sidebarOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
           </button>
+        )}
+
+        {/* Global Error Banner if API connection fails */}
+        {(sendMessageMutation.isError || isConvError) && (
+          <div className="bg-destructive/15 border-b border-destructive/30 px-4 py-2 text-xs flex items-center justify-between text-destructive shrink-0">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>
+                {sendMessageMutation.error?.message || convError?.message || "Backend communications error. Check server availability."}
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={() => {
+                sendMessageMutation.reset()
+                refetch()
+              }}
+              className="gap-1 border-destructive/40 text-destructive hover:bg-destructive/10"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Retry
+            </Button>
+          </div>
         )}
 
         {selectedChat ? (
@@ -376,14 +232,13 @@ Let me know if you would like me to compile this code or start a test suite run.
             {/* Conversation Messages List viewport */}
             <MessageArea
               messages={selectedChat.messages}
-              isThinking={isThinking}
-              isStreaming={isStreaming}
-              streamingText={streamingText}
+              isThinking={sendMessageMutation.isPending}
+              isStreaming={false}
+              streamingText=""
               onSelectPrompt={handleSelectPrompt}
               onNewChat={handleNewChat}
               onRegenerate={() => {
                 if (selectedChat.messages.length > 0) {
-                  // Simulate regeneration
                   const lastUserMsg = [...selectedChat.messages].reverse().find((m) => m.role === "user")
                   if (lastUserMsg) {
                     handleSend(lastUserMsg.content, [])
@@ -397,7 +252,7 @@ Let me know if you would like me to compile this code or start a test suite run.
               onSend={handleSend}
               inputText={inputText}
               setInputText={setInputText}
-              disabled={isThinking || isStreaming}
+              disabled={sendMessageMutation.isPending || isLoadingConvs}
             />
           </>
         ) : (
@@ -436,3 +291,4 @@ Let me know if you would like me to compile this code or start a test suite run.
     </motion.div>
   )
 }
+

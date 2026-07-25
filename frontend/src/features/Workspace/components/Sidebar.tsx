@@ -101,7 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     >
                       {/* Unread dot */}
                       {chat.unread && !isSelected && (
-                        <span className="absolute left-1.5 top-[15px] h-1.5 w-1.5 rounded-full bg-primary" />
+                        <span className="absolute left-1.5 top-3.75 h-1.5 w-1.5 rounded-full bg-primary" />
                       )}
 
                       <div className="pt-0.5 shrink-0">
@@ -129,7 +129,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       </div>
 
                       {/* Hover action overlay */}
-                      <div className="absolute right-2 top-[13px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                      <div className="absolute right-2 top-3.25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                         <button
                           onClick={(e) => onTogglePin(chat.id, e)}
                           className={`p-1 rounded hover:bg-secondary/20 cursor-pointer focus:outline-none transition-colors ${chat.pinned ? "text-primary-foreground" : "text-muted-foreground/60 hover:text-foreground"}`}

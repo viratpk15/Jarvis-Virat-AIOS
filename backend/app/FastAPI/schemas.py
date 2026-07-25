@@ -73,6 +73,21 @@ class ChatResponse(BaseModel):
     )
 
 
+class ConversationSummary(BaseModel):
+    """Summary model for a conversation thread used in list endpoints.
+
+    Mirrors the frontend Conversation interface but without the messages array.
+    """
+    id: str = Field(..., description="Conversation session identifier")
+    title: str = Field(..., description="Conversation title")
+    preview: str = Field(..., description="Short preview of the latest message")
+    time: str = Field(..., description="Human readable timestamp of last activity")
+    pinned: bool = Field(..., description="Pinned status for UI ordering")
+    model: str = Field(..., description="LLM model used for the conversation")
+    unread: bool = Field(..., description="Whether there are unread messages")
+    group: str = Field(..., description="Grouping label for UI (Today, Yesterday, etc.)")
+
+
 class HealthResponse(BaseModel):
     """Response model for the health check endpoint.
 

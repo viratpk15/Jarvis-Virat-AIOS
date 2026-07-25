@@ -55,6 +55,8 @@ class SQLitePersistenceBackend:
                 CREATE TABLE IF NOT EXISTS sessions (
                     session_id TEXT PRIMARY KEY,
                     user_id INTEGER,
+                    title TEXT DEFAULT 'New Conversation',
+                    pinned INTEGER DEFAULT 0,
                     summary TEXT,
                     created_at TEXT NOT NULL,
                     last_accessed TEXT NOT NULL

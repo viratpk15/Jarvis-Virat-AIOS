@@ -166,7 +166,7 @@ export const Composer: React.FC<ComposerProps> = ({
           placeholder="Message Jarvis or instruct agent..."
           rows={1}
           disabled={disabled}
-          className="w-full resize-none bg-transparent px-4 pt-4 pb-2 border-none outline-none text-sm text-foreground placeholder:text-muted-foreground/60 max-h-[180px] overflow-y-auto"
+          className="w-full resize-none bg-transparent px-4 pt-4 pb-2 border-none outline-none text-sm text-foreground placeholder:text-muted-foreground/60 max-h-45 overflow-y-auto"
         />
 
         {/* Attachment chips viewport */}
@@ -183,7 +183,7 @@ export const Composer: React.FC<ComposerProps> = ({
                 >
                   <div className={`flex items-center gap-1.5 px-2 py-0.5 border rounded-lg text-[10px] font-mono font-semibold ${getAttachmentBadgeBg(item.type)}`}>
                     {getAttachmentIcon(item.type)}
-                    <span className="text-foreground max-w-[120px] truncate">{item.name}</span>
+                    <span className="text-foreground max-w-30 truncate">{item.name}</span>
                     <button
                       onClick={() => removeAttachment(item.id)}
                       className="p-0.5 rounded-full hover:bg-secondary/80 text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none"

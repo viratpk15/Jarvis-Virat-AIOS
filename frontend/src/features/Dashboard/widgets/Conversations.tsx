@@ -84,7 +84,7 @@ export const Conversations: React.FC = () => {
                     <div className="p-1 rounded bg-secondary/50 border border-border/40 text-primary shrink-0">
                       <MessageSquare className="h-3.5 w-3.5" />
                     </div>
-                    <span className="font-bold text-xs text-foreground group-hover:text-primary transition-colors truncate max-w-[280px] sm:max-w-[400px]">
+                    <span className="font-bold text-xs text-foreground group-hover:text-primary transition-colors truncate max-w-70 sm:max-w-100">
                       {chat.title}
                     </span>
                     {chat.pinned && (

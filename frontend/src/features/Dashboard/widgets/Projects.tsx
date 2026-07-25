@@ -184,7 +184,7 @@ export const Projects: React.FC = () => {
 
                   {/* Recent activities footer */}
                   <div className="border-t border-border/40 pt-3 flex items-center justify-between text-[10px] font-mono">
-                    <span className="text-muted-foreground truncate max-w-[200px]" title={proj.activity}>
+                    <span className="text-muted-foreground truncate max-w-50" title={proj.activity}>
                       {proj.activity}
                     </span>
                     <span className="text-primary hover:text-primary-foreground flex items-center gap-0.5 cursor-pointer hover:underline transition-colors shrink-0">

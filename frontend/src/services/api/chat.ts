@@ -1,52 +1,43 @@
 import { apiClient } from "./apiClient"
 import type { ConversationResponse, Conversation } from "@/types/api"
 
-/**
- * Chat & Conversation Service Module
- * Coordinates message delivery and session history queries.
- */
+// API functions for conversation management
+export const listConversations = async (): Promise<Conversation[]> => {
+  return apiClient.get<Conversation[]>("/conversations")
+}
+
+export const getConversationDetails = async (session_id: string): Promise<Conversation> => {
+  return apiClient.get<Conversation>(`/conversations/${session_id}`)
+}
+
+export const createConversationApi = async (): Promise<Conversation> => {
+  return apiClient.post<Conversation>("/conversations")
+}
+
+export const renameConversationApi = async (session_id: string, title: string): Promise<Conversation> => {
+  return apiClient.patch<Conversation>(`/conversations/${session_id}/rename`, { title })
+}
+
+export const deleteConversationApi = async (session_id: string): Promise<void> => {
+  return apiClient.del<void>(`/conversations/${session_id}`)
+}
+
+export const pinConversationApi = async (session_id: string, pinned: boolean): Promise<Conversation> => {
+  return apiClient.post<Conversation>(`/conversations/${session_id}/pin`, { pinned })
+}
 
 /**
- * Dispatches a chat message prompt inside a specific session workspace.
- * 
- * @param session_id Unique identifier for the conversation thread.
- * @param message The user's query text content.
- * @returns Server response containing the generated answer.
+ * Dispatches a chat message prompt to the real backend /chat endpoint.
+ *
+ * @param session_id Unique session identifier bound to user token.
+ * @param message User prompt content.
+ * @returns Generated backend response payload.
  */
-export const sendMessage = async (session_id: string, message: string): Promise<ConversationResponse> => {
+export const sendMessageApi = async (session_id: string, message: string): Promise<ConversationResponse> => {
   return apiClient.post<ConversationResponse>("/chat", {
     session_id,
-    message
+    message,
   })
 }
 
-/**
- * Retrieves the full list of active conversation sessions for the authenticated user.
- * Note: Backed by GET /sessions contract once enabled.
- * 
- * @returns Array of active conversation threads.
- */
-export const listConversations = async (): Promise<Conversation[]> => {
-  return apiClient.get<Conversation[]>("/sessions")
-}
-
-/**
- * Retrieves detailed conversation logs and histories for a specific session.
- * Note: Backed by GET /sessions/{session_id} contract.
- * 
- * @param session_id Unique session identifier.
- * @returns Target conversation log metadata and message lists.
- */
-export const getConversationDetails = async (session_id: string): Promise<Conversation> => {
-  return apiClient.get<Conversation>(`/sessions/${session_id}`)
-}
-
-/**
- * Deletes a session history trace.
- * Note: Backed by DELETE /sessions/{session_id} contract.
- * 
- * @param session_id Target session identifier to destroy.
- */
-export const deleteConversation = async (session_id: string): Promise<void> => {
-  return apiClient.del<void>(`/sessions/${session_id}`)
-}
+export const sendMessage = sendMessageApi

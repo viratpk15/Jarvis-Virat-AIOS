@@ -56,3 +56,30 @@ class ChatRequest(BaseModel):
         "Must be non-empty and at most 10 000 characters.",
         examples=["What is the weather today?"],
     )
+
+
+class ConversationCreateRequest(BaseModel):
+    """Request model for creating a new conversation.
+
+    Optional title; if omitted, backend may generate a default title.
+    """
+    title: str = Field(
+        "Untitled Conversation",
+        description="Title of the new conversation.",
+        max_length=255,
+    )
+
+class ConversationRenameRequest(BaseModel):
+    """Request model for renaming an existing conversation."""
+    title: str = Field(
+        ..., 
+        description="New title for the conversation.",
+        max_length=255,
+    )
+
+class ConversationPinRequest(BaseModel):
+    """Request model for pinning or unpinning a conversation."""
+    pinned: bool = Field(
+        ..., 
+        description="Pin status to set for the conversation.",
+    )

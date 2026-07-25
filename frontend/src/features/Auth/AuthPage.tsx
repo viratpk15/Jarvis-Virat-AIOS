@@ -64,8 +64,8 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden select-none">
       {/* Background ambient mesh gradients */}
-      <div className="absolute top-1/4 left-1/4 h-[350px] w-[350px] bg-primary/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 h-[400px] w-[400px] bg-violet-600/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 h-87.5 w-87.5 bg-primary/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
+      <div className="absolute bottom-1/4 right-1/4 h-100 w-100 bg-violet-600/5 rounded-full blur-3xl pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 15 }}
@@ -141,7 +141,7 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2.5 top-[7px] text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none"
+                className="absolute right-2.5 top-1.75 text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>

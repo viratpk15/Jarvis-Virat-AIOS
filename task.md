@@ -1,34 +1,29 @@
-# Task Checklist - Jarvis AIOS Premium Design System Upgrade
+# Task Checklist - Sprint 5.3 Conversation Integration
 
-- [x] `[x]` Step 1: Design Tokens & CSS Architecture (`frontend/src/styles/globals.css`)
-  - [x] Implement semantic variables for 3 complete themes: Premium Dark (`.dark`), Premium Light (`.light`), Aurora (`.aurora`)
-  - [x] Standardize glassmorphism, focus rings, elevation shadows, reduced-motion queries
-  - [x] Set typography variables (Geist/Space Grotesk, Inter, JetBrains Mono)
-- [x] `[x]` Step 2: Theme Engine & Selector (`frontend/src/providers/ThemeProvider.tsx` & `SettingsPage.tsx`)
-  - [x] Update ThemeProvider to support `"dark" | "light" | "aurora"`
-  - [x] Prevent FOUC (flash of unstyled theme) on initial mount
-  - [x] Build interactive 3-theme selector cards inside `SettingsPage.tsx` with instant live preview & persistence
-- [x] `[x]` Step 3: Motion System & Animation Utilities (`frontend/src/lib/motion.ts`)
-  - [x] Define standardized Framer Motion transitions, spring/ease curves, layout indicators, and reduced-motion handling
-- [x] `[x]` Step 4: UI Primitive Micro-Interactions
-  - [x] Update `button.tsx` (hover lift, active compression, focus ring glow)
-  - [x] Update `card.tsx` (shadow elevation, border token transitions)
-  - [x] Update `input.tsx`, `textarea.tsx` (glowing focus rings, transition)
-  - [x] Update `dropdown-menu.tsx`, `dialog.tsx` (frosted glass background, motion scale+fade)
-  - [x] Update `badge.tsx`, `tooltip.tsx`, `avatar.tsx`, `scroll-area.tsx`, `separator.tsx`
-- [x] `[x]` Step 5: Desktop Shell & Navigation Interactions (`AppShell.tsx`, `InspectorPanel.tsx`, `CommandPalette.tsx`)
-  - [x] Add `layoutId` animated active pill indicators for Sidebar items & Inspector Tabs
-  - [x] Enhance glass header, status bar, workspace dropdown, command palette keyboard nav
-- [x] `[x]` Step 6: Workspace & Resource Feature Page Tokenization
-  - [x] Audit and remove hardcoded colors across `WorkspacePage.tsx`, `DashboardPage.tsx`, `AgentsPage.tsx`, `MemoryPage.tsx`, `FilesPage.tsx`, `ToolsPage.tsx`, `ModelsPage.tsx`
-- [x] `[x]` Step 7: Verification & Build Validation
-  - [x] Execute `pnpm build` in `frontend/`
-  - [x] Execute `pnpm lint` in `frontend/`
-- [x] `[x]` Step 8: Comprehensive Documentation Deliverables
+- [x] `[x]` Step 1: Update API Service (`frontend/src/services/api/chat.ts`)
+  - [x] Implement `sendMessageApi` using `apiClient.post<ConversationResponse>("/chat", { session_id, message })`
+  - [x] Implement session local persistence helpers (`getStoredConversations`, `saveStoredConversations`)
+- [x] `[x]` Step 2: Create React Query Custom Hooks (`frontend/src/services/queries/chat.ts`)
+  - [x] `useConversationsQuery()` - query active conversations list
+  - [x] `useSendMessageMutation()` - mutation hook sending prompts to `/chat` with optimistic updates
+  - [x] `useCreateConversationMutation()` - mutation creating new session threads
+  - [x] `useDeleteConversationMutation()` - mutation removing session threads
+  - [x] `useRenameConversationMutation()` - mutation updating session titles
+  - [x] `useTogglePinMutation()` - mutation updating session pinned status
+- [x] `[x]` Step 3: Wire Premium Workspace Page (`frontend/src/features/Workspace/WorkspacePage.tsx`)
+  - [x] Connect Sidebar to live conversation list & active selection
+  - [x] Connect MessageArea to live message history & thinking indicator
+  - [x] Connect Composer to `useSendMessageMutation`
+  - [x] Connect Header to conversation title, model, scope, export & delete
+  - [x] Add global workspace error banner handling network / server failures
+- [x] `[x]` Step 4: Verification & Build Validation
+  - [x] Execute `pnpm build` in `frontend/` (625ms)
+  - [x] Execute `pnpm lint` in `frontend/` (0 errors)
+  - [x] Verify session persistence, switching, refresh, and authentication
+- [x] `[x]` Step 5: Deliverables Documentation
   - [x] Create `engineering_report.md`
   - [x] Create `developer_walkthrough.md`
-  - [x] Create `ui_review.md`
   - [x] Create `architecture_diagram.md`
-  - [x] Create `theme_system.md`
-  - [x] Create `interaction_guidelines.md`
+  - [x] Create `conversation_flow.md`
+  - [x] Create `integration_report.md`
   - [x] Create `task.md`

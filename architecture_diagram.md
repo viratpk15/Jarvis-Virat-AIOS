@@ -1,41 +1,56 @@
-# Design System Architecture: Jarvis AIOS
+# Architecture Diagram: Sprint 5.3 Conversation Integration
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant Composer as Workspace Composer UI
+    participant WorkspacePage as WorkspacePage Component
+    participant ReactQuery as TanStack Query (queries/chat.ts)
+    participant APIClient as apiClient (Fetch Wrapper)
+    participant FastAPI as Backend FastAPI (POST /chat)
+    participant Runtime as Jarvis Runtime & LangGraph
+
+    User->>Composer: Types prompt & submits
+    Composer->>WorkspacePage: handleSend(text, attachedFiles)
+    WorkspacePage->>ReactQuery: useSendMessageMutation.mutate({ session_id, message })
+    ReactQuery->>ReactQuery: Optimistically append User Message
+    ReactQuery->>APIClient: sendMessageApi(session_id, message)
+    APIClient->>FastAPI: POST /chat { session_id, message } (Auth: Bearer JWT)
+    FastAPI->>FastAPI: verify_session_ownership(session_id, current_user)
+    FastAPI->>Runtime: jarvis.chat(session_id, message)
+    Runtime-->>FastAPI: { response: "Generated AI Answer" }
+    FastAPI-->>APIClient: HTTP 200 OK { response }
+    APIClient-->>ReactQuery: ConversationResponse
+    ReactQuery->>ReactQuery: Append Assistant Message & Save LocalStorage
+    ReactQuery-->>WorkspacePage: Re-render UI & clear thinking state
+    WorkspacePage-->>User: Display assistant response in MessageArea
+```
+
+## System Component Relationships
 
 ```mermaid
 graph TD
-    subgraph Client Layer
-        A[HTML Document / root] --> B[ThemeProvider]
-        B --> C[localStorage Sync]
+    subgraph Frontend Layer
+        A[WorkspacePage.tsx] --> B[Sidebar Component]
+        A --> C[MessageArea Component]
+        A --> D[Composer Component]
+        A --> E[Header Component]
+        A --> F[queries/chat.ts - TanStack Query]
     end
 
-    subgraph Theme Token Layer
-        B --> D{Active Theme Class}
-        D -- .dark --> E[Premium Dark Tokens]
-        D -- .light --> F[Premium Light Tokens]
-        D -- .aurora --> G[Aurora Tokens]
+    subgraph API Foundation
+        F --> G[api/chat.ts]
+        G --> H[apiClient.ts]
+        H --> I[errors.ts Normalizer]
     end
 
-    subgraph Component Engine
-        E --> H[globals.css Semantic Variables]
-        F --> H
-        G --> H
-        H --> I[Tailwind CSS v4 Utility Engine]
-        I --> J[UI Primitives: Button, Card, Input, Dialog]
-        I --> K[AppShell Navigation & Sidebar]
-        I --> L[Inspector Panel & Tabs]
-        I --> M[Feature Pages: Workspace, Dashboard, Agents]
-    end
-
-    subgraph Motion Engine
-        N[framer-motion] --> O[motion.ts Physics & Variants]
-        O --> J
-        O --> K
-        O --> L
+    subgraph Backend FastAPI Runtime
+        H -->|POST /chat| J[app/FastAPI/routes.py]
+        J -->|verify_session_ownership| K[app/FastAPI/dependencies.py]
+        J --> L[app/Services/chat_service.py]
+        L --> M[app/Jarvis/runtime.py]
+        M --> N[app/Memory/manager.py]
+        M --> O[app/LangGraph/graph.py]
     end
 ```
-
-## Layer Descriptions
-
-1. **Client & Persistence Layer**: `ThemeProvider` initializes the saved theme from `localStorage` without FOUC, attaching `.dark`, `.light`, or `.aurora` class to `document.documentElement`.
-2. **Semantic Design Token Layer**: HSL CSS variables mapping background, surface, text, border, accent, glass, and shadow specifications.
-3. **Component Engine**: Pure component layer utilizing semantic tokens. No hardcoded hex values.
-4. **Motion Engine**: Framer Motion standardized springs and eases providing desktop-grade micro-interactions.
