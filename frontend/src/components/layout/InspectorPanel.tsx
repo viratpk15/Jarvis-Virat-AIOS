@@ -299,14 +299,21 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({ isOpen, onToggle
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TabType)}
                 className={cn(
-                  "flex flex-col items-center justify-center p-1.5 rounded-md text-[9px] font-medium transition-all gap-1 cursor-pointer outline-none border",
+                  "flex flex-col items-center justify-center p-1.5 rounded-md text-[9px] font-medium transition-all gap-1 cursor-pointer outline-none border relative select-none",
                   isActive
-                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    ? "text-primary-foreground font-semibold border-primary/50"
                     : "text-muted-foreground bg-transparent border-transparent hover:bg-secondary/40 hover:text-foreground"
                 )}
               >
-                <TabIcon className="h-3.5 w-3.5" />
-                <span>{tab.name}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="inspectorActiveTab"
+                    className="absolute inset-0 bg-primary rounded-md shadow-xs"
+                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                  />
+                )}
+                <TabIcon className="h-3.5 w-3.5 z-10" />
+                <span className="z-10">{tab.name}</span>
               </button>
             )
           })}

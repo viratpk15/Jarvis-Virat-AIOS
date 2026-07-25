@@ -2,20 +2,21 @@ import type { Variants } from "framer-motion"
 
 export const springTransition = {
   type: "spring" as const,
-  stiffness: 300,
-  damping: 30
+  stiffness: 350,
+  damping: 30,
+  mass: 0.8
 }
 
 export const easeTransition = {
   type: "tween" as const,
   ease: [0.16, 1, 0.3, 1] as const, // easeOutExpo
-  duration: 0.4
+  duration: 0.3
 }
 
 export const pageVariants: Variants = {
-  initial: { opacity: 0, y: 10 },
+  initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0, transition: easeTransition },
-  exit: { opacity: 0, y: -10, transition: { duration: 0.15 } }
+  exit: { opacity: 0, y: -6, transition: { duration: 0.15 } }
 }
 
 export const sidebarVariants: Variants = {
@@ -47,9 +48,15 @@ export const panelVariants: Variants = {
 }
 
 export const dialogVariants: Variants = {
-  initial: { opacity: 0, scale: 0.95, y: -20 },
+  initial: { opacity: 0, scale: 0.96, y: -12 },
   animate: { opacity: 1, scale: 1, y: 0, transition: easeTransition },
-  exit: { opacity: 0, scale: 0.95, y: -10, transition: { duration: 0.15 } }
+  exit: { opacity: 0, scale: 0.96, y: -8, transition: { duration: 0.12 } }
+}
+
+export const dropdownScaleFade: Variants = {
+  initial: { opacity: 0, scale: 0.95, y: -6 },
+  animate: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.18, ease: [0.16, 1, 0.3, 1] } },
+  exit: { opacity: 0, scale: 0.95, y: -4, transition: { duration: 0.12 } }
 }
 
 export const fadeVariants: Variants = {
@@ -59,8 +66,8 @@ export const fadeVariants: Variants = {
 }
 
 export const commandPaletteItemVariants: Variants = {
-  hover: { backgroundColor: "rgba(255, 255, 255, 0.08)", scale: 1.01 },
-  tap: { scale: 0.99 }
+  hover: { backgroundColor: "var(--color-secondary)", scale: 1.008, transition: { duration: 0.15 } },
+  tap: { scale: 0.985 }
 }
 
 export const dashboardGridVariants: Variants = {
@@ -77,7 +84,7 @@ export const dashboardCardVariants: Variants = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0, transition: easeTransition },
   hover: {
-    y: -3,
+    y: -2.5,
     transition: { duration: 0.2, ease: "easeOut" }
   },
   tap: { scale: 0.985 }
@@ -105,5 +112,17 @@ export const cursorVariants: Variants = {
     transition: { duration: 0.8, repeat: Infinity, ease: "linear" }
   }
 }
+
+export const buttonMicroVariants: Variants = {
+  hover: { y: -1, transition: { duration: 0.15 } },
+  tap: { scale: 0.97, y: 0 }
+}
+
+export const tableRowVariants: Variants = {
+  initial: { opacity: 0, y: 4 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.15 } },
+  hover: { backgroundColor: "color-mix(in srgb, hsl(var(--secondary)) 60%, transparent)" }
+}
+
 
 

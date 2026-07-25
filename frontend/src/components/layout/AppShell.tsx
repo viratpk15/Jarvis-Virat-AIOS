@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { Link, useLocation, Outlet } from "react-router"
+import { useAuthStore } from "@/services/store/authStore"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   LayoutDashboard,
@@ -101,6 +102,12 @@ const workspacesList: WorkspaceInfo[] = [
 ]
 
 export default function AppShell() {
+  const user = useAuthStore((state) => state.user)
+  const clearAuth = useAuthStore((state) => state.clearAuth)
+  const fallbackChar = user?.email ? user.email[0].toUpperCase() : "U"
+  const displayName = user?.email ? user.email.split("@")[0] : "User"
+  const userEmail = user?.email || "user@jarvis.ai"
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem("sidebar_collapsed")
     return saved === "true"
@@ -350,15 +357,22 @@ export default function AppShell() {
                         to={item.path}
                         onClick={() => isMobile && setSidebarCollapsed(true)}
                         className={cn(
-                          "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-primary",
+                          "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-primary select-none",
                           isActive
-                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/10"
-                            : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                            ? "text-primary-foreground font-semibold"
+                            : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
                         )}
                       >
-                        <Icon className={cn("h-4 w-4 shrink-0", isActive ? "" : "group-hover:text-primary transition-colors")} />
+                        {isActive && (
+                          <motion.div
+                            layoutId="sidebarActiveItem"
+                            className="absolute inset-0 bg-primary rounded-lg shadow-md shadow-primary/20"
+                            transition={springTransition}
+                          />
+                        )}
+                        <Icon className={cn("h-4 w-4 shrink-0 z-10", isActive ? "" : "group-hover:text-primary transition-colors")} />
                         {(!sidebarCollapsed || isMobile) && (
-                          <span>{item.name}</span>
+                          <span className="z-10">{item.name}</span>
                         )}
                         {sidebarCollapsed && !isMobile && (
                           <div className="absolute left-16 px-2 py-1 bg-popover text-popover-foreground text-xs rounded border border-border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-md">
@@ -383,12 +397,12 @@ export default function AppShell() {
                 sidebarCollapsed && !isMobile ? "justify-center" : ""
               )}>
                 <Avatar className="h-8 w-8 border border-primary/20 shrink-0">
-                  <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">U</AvatarFallback>
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">{fallbackChar}</AvatarFallback>
                 </Avatar>
                 {(!sidebarCollapsed || isMobile) && (
                   <div className="flex-1 text-left min-w-0">
-                    <p className="text-xs font-semibold truncate text-foreground leading-none">Virat</p>
-                    <p className="text-[10px] text-muted-foreground truncate mt-1">virat@jarvis.ai</p>
+                    <p className="text-xs font-semibold truncate text-foreground leading-none capitalize">{displayName}</p>
+                    <p className="text-[10px] text-muted-foreground truncate mt-1">{userEmail}</p>
                   </div>
                 )}
               </div>
@@ -405,7 +419,10 @@ export default function AppShell() {
                 Preference Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border/60" />
-              <DropdownMenuItem className="cursor-pointer gap-2 text-xs text-destructive hover:bg-destructive/10">
+              <DropdownMenuItem
+                onClick={() => clearAuth()}
+                className="cursor-pointer gap-2 text-xs text-destructive hover:bg-destructive/10"
+              >
                 <LogOut className="h-3.5 w-3.5" />
                 Disconnect Session
               </DropdownMenuItem>
