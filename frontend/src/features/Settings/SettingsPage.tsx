@@ -75,7 +75,7 @@ export default function SettingsPage() {
                 >
                   {isActive && (
                     <div className="absolute top-3 right-3 h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
-                      <Check className="h-3 w-3 stroke-[3]" />
+                      <Check className="h-3 w-3 stroke-3" />
                     </div>
                   )}
 
