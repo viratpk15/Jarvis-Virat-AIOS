@@ -94,7 +94,5 @@ pip-wheel-metadata/
 # ------------------------------------------------------------
 .ipynb_checkpoints/
 
-# Runtime Data
-data/
-Data/*
-!Data/.gitkeep
+# Runtime Data (repository root only)
+/data/

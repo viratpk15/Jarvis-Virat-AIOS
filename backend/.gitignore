@@ -49,7 +49,15 @@ vectorstore/
 # ------------------------------------------------------------
 # Runtime Data
 # ------------------------------------------------------------
-data/
+# Runtime database files only
+# Runtime database files only
+/data/
+
+/app/Data/*
+!/app/Data/.gitkeep
+!/app/Data/base.py
+!/app/Data/database.py
+!/app/Data/models.py
 
 # If you later want to version seed data,
 # replace the line above with more specific ignores.
