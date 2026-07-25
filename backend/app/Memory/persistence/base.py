@@ -131,3 +131,26 @@ class IPersistenceBackend(ABC):
     def delete_conversation(self, session_id: str, user_id: int) -> bool:
         """Delete a conversation session and all its messages if owned by user_id."""
         pass
+
+    # ---------------------------------------------------------------------------
+    # User / Auth Persistence Operations
+    # ---------------------------------------------------------------------------
+
+    @abstractmethod
+    def create_user(self, email: str, password_hash: str) -> dict[str, Any]:
+        """Create a new user account.
+
+        Raises:
+            ValueError: If email is already registered.
+        """
+        pass
+
+    @abstractmethod
+    def get_user_by_email(self, email: str) -> dict[str, Any] | None:
+        """Get a user dictionary by email address."""
+        pass
+
+    @abstractmethod
+    def get_user_by_id(self, user_id: int) -> dict[str, Any] | None:
+        """Get a user dictionary by user_id."""
+        pass

@@ -13,6 +13,7 @@ from typing import Any, Sequence
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.Data.base import Base
@@ -23,6 +24,7 @@ from app.Data.models import (
     MessageModel,
     SessionModel,
     SummaryEmbeddingModel,
+    UserModel,
 )
 
 from app.Memory.persistence.base import IPersistenceBackend
@@ -592,3 +594,72 @@ class PostgreSQLPersistenceBackend(IPersistenceBackend):
             db.delete(session_obj)
             db.commit()
             return True
+
+    # ---------------------------------------------------------------------------
+    # User / Auth Persistence Operations
+    # ---------------------------------------------------------------------------
+
+    def create_user(self, email: str, password_hash: str) -> dict[str, Any]:
+        """Create a new user account.
+
+        Args:
+            email: User's email address.
+            password_hash: Hashed password.
+
+        Returns:
+            Dict containing user id, email, password_hash, and created_at.
+
+        Raises:
+            ValueError: If email is already registered.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        try:
+            with self._get_session() as db:
+                user_obj = UserModel(
+                    email=email,
+                    password_hash=password_hash,
+                    created_at=now,
+                )
+                db.add(user_obj)
+                db.commit()
+                db.refresh(user_obj)
+                user_id = user_obj.id
+        except IntegrityError:
+            raise ValueError(f"Email '{email}' is already registered")
+
+        return {
+            "id": user_id,
+            "email": email,
+            "password_hash": password_hash,
+            "created_at": now,
+        }
+
+    def get_user_by_email(self, email: str) -> dict[str, Any] | None:
+        """Get a user by email address."""
+        with self._get_session() as db:
+            user_obj = db.execute(
+                select(UserModel).where(UserModel.email == email)
+            ).scalar_one_or_none()
+            if not user_obj:
+                return None
+            return {
+                "id": user_obj.id,
+                "email": user_obj.email,
+                "password_hash": user_obj.password_hash,
+                "created_at": user_obj.created_at,
+            }
+
+    def get_user_by_id(self, user_id: int) -> dict[str, Any] | None:
+        """Get a user by database ID."""
+        with self._get_session() as db:
+            user_obj = db.execute(
+                select(UserModel).where(UserModel.id == user_id)
+            ).scalar_one_or_none()
+            if not user_obj:
+                return None
+            return {
+                "id": user_obj.id,
+                "email": user_obj.email,
+                "password_hash": user_obj.password_hash,
+                "created_at": user_obj.created_at,
+            }

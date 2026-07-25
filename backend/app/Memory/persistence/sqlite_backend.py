@@ -52,6 +52,16 @@ class SQLitePersistenceBackend(IPersistenceBackend):
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
+            # Users table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+            """)
+
             # Sessions table (user_id binds sessions to authenticated users)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS sessions (
@@ -716,3 +726,76 @@ class SQLitePersistenceBackend(IPersistenceBackend):
             )
             conn.commit()
             return cursor.rowcount > 0
+
+    # ---------------------------------------------------------------------------
+    # User / Auth Persistence Operations
+    # ---------------------------------------------------------------------------
+
+    def create_user(self, email: str, password_hash: str) -> dict[str, Any]:
+        """Create a new user account.
+
+        Args:
+            email: User's email address.
+            password_hash: Hashed password.
+
+        Returns:
+            Dict containing user id, email, password_hash, and created_at.
+
+        Raises:
+            ValueError: If email is already registered.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO users (email, password_hash, created_at) VALUES (?, ?, ?)",
+                    (email, password_hash, now),
+                )
+                conn.commit()
+                user_id = cursor.lastrowid
+        except sqlite3.IntegrityError:
+            raise ValueError(f"Email '{email}' is already registered")
+
+        return {
+            "id": user_id,
+            "email": email,
+            "password_hash": password_hash,
+            "created_at": now,
+        }
+
+    def get_user_by_email(self, email: str) -> dict[str, Any] | None:
+        """Get a user by email address."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT id, email, password_hash, created_at FROM users WHERE email = ?",
+                (email,),
+            )
+            row = cursor.fetchone()
+            if not row:
+                return None
+            return {
+                "id": row[0],
+                "email": row[1],
+                "password_hash": row[2],
+                "created_at": row[3],
+            }
+
+    def get_user_by_id(self, user_id: int) -> dict[str, Any] | None:
+        """Get a user by database ID."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT id, email, password_hash, created_at FROM users WHERE id = ?",
+                (user_id,),
+            )
+            row = cursor.fetchone()
+            if not row:
+                return None
+            return {
+                "id": row[0],
+                "email": row[1],
+                "password_hash": row[2],
+                "created_at": row[3],
+            }

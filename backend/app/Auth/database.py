@@ -1,93 +1,74 @@
 """
 Jarvis AIOS
 -----------
-Authentication Database
+Authentication User Repository Adapter
 
-SQLite-backed user storage with parameterized queries.
-All operations are isolated to the auth database.
+User repository layer delegating user storage operations to IPersistenceBackend.
+Supports both SQLite and PostgreSQL persistence backends seamlessly.
+Contains zero direct database driver dependencies.
 """
 
 import logging
-import sqlite3
-from datetime import datetime, timezone
-from pathlib import Path
+from typing import Any
 
-from app.Config.settings import AUTH_DB_PATH
+from app.Memory.persistence import IPersistenceBackend, get_persistence_backend
 
 logger = logging.getLogger(__name__)
 
 
 class UserDatabase:
-    """SQLite database for user authentication.
+    """User database repository adapter.
 
-    Manages the users table with secure password storage.
-    All SQL operations use parameterized queries.
+    Delegates user persistence operations to active IPersistenceBackend.
+    Exposes provider-agnostic user repository interface.
     """
 
-    def __init__(self, db_path: str = AUTH_DB_PATH):
-        """Initialize the user database.
+    def __init__(
+        self,
+        db_path: str | None = None,
+        persistence: IPersistenceBackend | None = None,
+    ):
+        """Initialize UserDatabase adapter.
 
         Args:
-            db_path: Path to the SQLite database file.
+            db_path: Optional SQLite database file path (for backwards compatibility with test fixtures).
+            persistence: Optional custom IPersistenceBackend instance.
         """
-        self.db_path = db_path
-        self._ensure_tables_exist()
+        if persistence is not None:
+            self._persistence = persistence
+        elif db_path is not None:
+            from app.Memory.persistence.sqlite_backend import SQLitePersistenceBackend
+            self._persistence = SQLitePersistenceBackend(db_path=db_path)
+        else:
+            self._persistence = None
 
-    def _get_connection(self) -> sqlite3.Connection:
-        """Get a database connection.
-
-        Returns:
-            SQLite connection object.
-        """
-        Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
-        return sqlite3.connect(self.db_path)
-
-    def _ensure_tables_exist(self) -> None:
-        """Create the users table if it doesn't exist."""
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    email TEXT UNIQUE NOT NULL,
-                    password_hash TEXT NOT NULL,
-                    created_at TEXT NOT NULL
-                )
-            """)
-            conn.commit()
-            logger.debug("Ensured users table exists at %s", self.db_path)
+    @property
+    def persistence(self) -> IPersistenceBackend:
+        """Lazily obtain active persistence backend."""
+        if self._persistence is None:
+            self._persistence = get_persistence_backend()
+        return self._persistence
 
     def create_user(self, email: str, password_hash: str) -> int:
-        """Create a new user.
+        """Create a new user account.
 
         Args:
             email: The user's email address.
             password_hash: The bcrypt-hashed password.
 
         Returns:
-            The new user's ID.
+            The new user's integer database ID.
 
         Raises:
-            ValueError: If the email is already registered.
+            ValueError: If email is already registered.
         """
-        now = datetime.now(timezone.utc).isoformat()
+        user_dict = self.persistence.create_user(email, password_hash)
+        user_id = user_dict["id"]
+        logger.info("Created user id=%s email=%s", user_id, email)
+        return user_id
 
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    "INSERT INTO users (email, password_hash, created_at) VALUES (?, ?, ?)",
-                    (email, password_hash, now),
-                )
-                conn.commit()
-                user_id = cursor.lastrowid
-                logger.info("Created user id=%s email=%s", user_id, email)
-                return user_id
-        except sqlite3.IntegrityError:
-            raise ValueError(f"Email '{email}' is already registered")
-
-    def get_user_by_email(self, email: str) -> dict | None:
-        """Get a user by email.
+    def get_user_by_email(self, email: str) -> dict[str, Any] | None:
+        """Get user dictionary by email.
 
         Args:
             email: The user's email address.
@@ -95,43 +76,18 @@ class UserDatabase:
         Returns:
             User dict with id, email, password_hash, or None if not found.
         """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "SELECT id, email, password_hash FROM users WHERE email = ?",
-                (email,),
-            )
-            row = cursor.fetchone()
-            if row:
-                return {
-                    "id": row[0],
-                    "email": row[1],
-                    "password_hash": row[2],
-                }
-            return None
+        return self.persistence.get_user_by_email(email)
 
-    def get_user_by_id(self, user_id: int) -> dict | None:
-        """Get a user by ID.
+    def get_user_by_id(self, user_id: int) -> dict[str, Any] | None:
+        """Get user dictionary by database ID.
 
         Args:
-            user_id: The user's database ID.
+            user_id: The user's integer database ID.
 
         Returns:
             User dict with id and email, or None if not found.
         """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "SELECT id, email FROM users WHERE id = ?",
-                (user_id,),
-            )
-            row = cursor.fetchone()
-            if row:
-                return {
-                    "id": row[0],
-                    "email": row[1],
-                }
-            return None
+        return self.persistence.get_user_by_id(user_id)
 
 
 # Global database instance
