@@ -93,3 +93,8 @@ pip-wheel-metadata/
 # Jupyter
 # ------------------------------------------------------------
 .ipynb_checkpoints/
+
+# Runtime Data
+data/
+Data/*
+!Data/.gitkeep

@@ -38,3 +38,19 @@ LOGIN_RATE_LIMIT: str = os.getenv("LOGIN_RATE_LIMIT", "5/minute")
 REGISTER_RATE_LIMIT: str = os.getenv("REGISTER_RATE_LIMIT", "3/minute")
 # Chat: generous — 30 requests per minute per IP
 CHAT_RATE_LIMIT: str = os.getenv("CHAT_RATE_LIMIT", "30/minute")
+
+# CORS configuration
+# Standard local development origins used if CORS_ORIGINS env var is not set.
+_cors_env = os.getenv("CORS_ORIGINS")
+if _cors_env:
+    CORS_ORIGINS: list[str] = [
+        origin.strip() for origin in _cors_env.split(",") if origin.strip()
+    ]
+else:
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+    ]
+

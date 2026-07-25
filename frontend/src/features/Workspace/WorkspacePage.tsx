@@ -1,31 +1,46 @@
 import React, { useState, useEffect } from "react"
+import { useNavigate } from "react-router"
 import { motion, AnimatePresence } from "framer-motion"
 import { Menu, ChevronLeft, ChevronRight, AlertCircle, RefreshCw } from "lucide-react"
+import { useQueryClient } from "@tanstack/react-query"
+
 import { Button } from "@/components/ui/button"
 import { Sidebar } from "./components/Sidebar"
 import { Header } from "./components/Header"
 import { MessageArea } from "./components/MessageArea"
 import { Composer } from "./components/Composer"
 import { dashboardGridVariants } from "@/lib/motion"
+import { streamChatMessage, type CancellationToken } from "@/services/api/sse"
+
+import { queryKeys } from "@/services/queries/queryKeys"
+import { UnauthorizedError } from "@/services/api/errors"
 import {
   useConversationsQuery,
-  useSendMessageMutation,
   useCreateConversationMutation,
   useDeleteConversationMutation,
   useRenameConversationMutation,
   useTogglePinMutation
 } from "@/services/queries/chat"
-import type { Conversation, Attachment } from "@/types/api"
+import type { Conversation, Attachment, Message } from "@/types/api"
 
 export default function WorkspacePage() {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [inputText, setInputText] = useState("")
 
+  // Real-time SSE streaming state
+  const [isThinking, setIsThinking] = useState(false)
+  const [isStreaming, setIsStreaming] = useState(false)
+  const [streamingText, setStreamingText] = useState("")
+  const [streamError, setStreamError] = useState<string | null>(null)
+  const [cancelToken, setCancelToken] = useState<CancellationToken | null>(null)
+  const [optimisticUserMsg, setOptimisticUserMsg] = useState<Message | null>(null)
+
   // Real backend queries & mutations
   const { data: conversations = [], isLoading: isLoadingConvs, isError: isConvError, error: convError, refetch } = useConversationsQuery()
-  const sendMessageMutation = useSendMessageMutation()
   const createConvMutation = useCreateConversationMutation()
   const deleteConvMutation = useDeleteConversationMutation()
   const renameConvMutation = useRenameConversationMutation()
@@ -56,10 +71,25 @@ export default function WorkspacePage() {
   const selectedChat: Conversation | null = conversations.find((c) => c.id === selectedId) || (conversations[0] ?? null)
 
   const handleSelectChat = (id: string) => {
+    if (isStreaming && cancelToken) {
+      cancelToken.abort()
+    }
+    setIsThinking(false)
+    setIsStreaming(false)
+    setStreamingText("")
+    setOptimisticUserMsg(null)
     setSelectedId(id)
   }
 
   const handleNewChat = () => {
+    if (isStreaming && cancelToken) {
+      cancelToken.abort()
+    }
+    setIsThinking(false)
+    setIsStreaming(false)
+    setStreamingText("")
+    setOptimisticUserMsg(null)
+
     createConvMutation.mutate(undefined, {
       onSuccess: (newConv) => {
         setSelectedId(newConv.id)
@@ -113,16 +143,73 @@ export default function WorkspacePage() {
     URL.revokeObjectURL(url)
   }
 
-  // Submit new prompt to real backend /chat API
-  const handleSend = (text: string, attachedFiles: Attachment[]) => {
+  // Submit prompt using real-time SSE streaming
+  const handleSend = (text: string, _attachedFiles: Attachment[]) => {
     const activeSessionId = selectedId || selectedChat?.id
-    if (!activeSessionId || (!text.trim() && attachedFiles.length === 0)) return
+    if (!activeSessionId || !text.trim()) return
 
-    sendMessageMutation.mutate({
-      session_id: activeSessionId,
-      message: text,
-      attachedFiles
+    // Clear previous errors & reset stream buffers
+    setStreamError(null)
+    setIsThinking(true)
+    setIsStreaming(false)
+    setStreamingText("")
+
+    const userTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    const optMsg: Message = {
+      id: `user-opt-${Date.now()}`,
+      role: "user",
+      content: text,
+      timestamp: userTime
+    }
+    setOptimisticUserMsg(optMsg)
+
+    const tokenHandle = streamChatMessage(activeSessionId, text, {
+      onThinking: () => {
+        setIsThinking(true)
+        setIsStreaming(false)
+      },
+      onToken: (tokenStr: string) => {
+        setIsThinking(false)
+        setIsStreaming(true)
+        setStreamingText((prev) => prev + tokenStr)
+      },
+      onDone: () => {
+        setIsThinking(false)
+        setIsStreaming(false)
+        setStreamingText("")
+        setCancelToken(null)
+        setOptimisticUserMsg(null)
+
+        // Invalidate queries so final persisted messages are synced clean
+        queryClient.invalidateQueries({ queryKey: queryKeys.conversations.list() })
+        queryClient.invalidateQueries({ queryKey: queryKeys.conversations.detail(activeSessionId) })
+      },
+      onError: (err: Error) => {
+        setIsThinking(false)
+        setIsStreaming(false)
+        setStreamingText("")
+        setCancelToken(null)
+        setStreamError(err.message || "Failed to stream response from server.")
+
+        if (err instanceof UnauthorizedError) {
+          localStorage.removeItem("jarvis_access_token")
+          navigate("/auth")
+        }
+      }
     })
+
+    setCancelToken(tokenHandle)
+  }
+
+  const handleStopGeneration = () => {
+    if (cancelToken) {
+      cancelToken.abort()
+    }
+    setIsThinking(false)
+    setIsStreaming(false)
+    setStreamingText("")
+    setCancelToken(null)
+    setOptimisticUserMsg(null)
   }
 
   const handleSelectPrompt = (prompt: string) => {
@@ -130,6 +217,12 @@ export default function WorkspacePage() {
   }
 
   const isMobile = windowWidth < 768
+
+  // Active message list combining loaded history + optimistic user message
+  const activeMessages: Message[] = selectedChat ? [
+    ...selectedChat.messages,
+    ...(optimisticUserMsg ? [optimisticUserMsg] : [])
+  ] : []
 
   return (
     <motion.div
@@ -178,19 +271,19 @@ export default function WorkspacePage() {
         )}
 
         {/* Global Error Banner if API connection fails */}
-        {(sendMessageMutation.isError || isConvError) && (
+        {(streamError || isConvError) && (
           <div className="bg-destructive/15 border-b border-destructive/30 px-4 py-2 text-xs flex items-center justify-between text-destructive shrink-0">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>
-                {sendMessageMutation.error?.message || convError?.message || "Backend communications error. Check server availability."}
+                {streamError || convError?.message || "Backend communications error. Check server availability."}
               </span>
             </div>
             <Button
               variant="outline"
               size="xs"
               onClick={() => {
-                sendMessageMutation.reset()
+                setStreamError(null)
                 refetch()
               }}
               className="gap-1 border-destructive/40 text-destructive hover:bg-destructive/10"
@@ -231,10 +324,10 @@ export default function WorkspacePage() {
 
             {/* Conversation Messages List viewport */}
             <MessageArea
-              messages={selectedChat.messages}
-              isThinking={sendMessageMutation.isPending}
-              isStreaming={false}
-              streamingText=""
+              messages={activeMessages}
+              isThinking={isThinking}
+              isStreaming={isStreaming}
+              streamingText={streamingText}
               onSelectPrompt={handleSelectPrompt}
               onNewChat={handleNewChat}
               onRegenerate={() => {
@@ -252,7 +345,9 @@ export default function WorkspacePage() {
               onSend={handleSend}
               inputText={inputText}
               setInputText={setInputText}
-              disabled={sendMessageMutation.isPending || isLoadingConvs}
+              disabled={isLoadingConvs || isThinking || isStreaming}
+              isStreaming={isThinking || isStreaming}
+              onStopGeneration={handleStopGeneration}
             />
           </>
         ) : (
@@ -291,4 +386,5 @@ export default function WorkspacePage() {
     </motion.div>
   )
 }
+
 

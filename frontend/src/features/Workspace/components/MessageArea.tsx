@@ -2,8 +2,10 @@ import React, { useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { Loader2 } from "lucide-react"
 import { MessageBubble } from "./MessageBubble"
+import { MarkdownRenderer } from "./MarkdownRenderer"
 import { EmptyState } from "./EmptyState"
 import { cursorVariants } from "@/lib/motion"
+
 
 interface Message {
   id: string
@@ -56,7 +58,8 @@ export const MessageArea: React.FC<MessageAreaProps> = ({
 
       {/* Thinking state bubble */}
       {isThinking && (
-        <div className="flex gap-3 max-w-3xl mr-auto select-none">
+        <div className="flex gap-3 max-w-3xl mr-auto select-none" role="status" aria-live="polite">
+          <span className="sr-only">Assistant is responding</span>
           <div className="h-8 w-8 rounded-lg border font-mono text-xs flex items-center justify-center shrink-0 shadow-sm bg-primary text-primary-foreground border-primary/20">
             A
           </div>
@@ -71,30 +74,25 @@ export const MessageArea: React.FC<MessageAreaProps> = ({
       )}
 
       {/* Streaming state bubble */}
-      {isStreaming && streamingText && (
-        <div className="flex gap-3 max-w-3xl mr-auto">
+      {isStreaming && (
+        <div className="flex gap-3 max-w-3xl mr-auto" role="status" aria-live="polite">
+          <span className="sr-only">Assistant is responding</span>
           <div className="h-8 w-8 rounded-lg border font-mono text-xs flex items-center justify-center shrink-0 shadow-sm bg-primary text-primary-foreground border-primary/20">
             A
           </div>
-          <div className="space-y-1 min-w-0">
-            <div className="relative px-4 py-3 text-sm leading-relaxed text-foreground bg-transparent border border-transparent">
-              {/* Split lines to mock paragraphs during streaming */}
-              {streamingText.split("\n").map((line, idx) => (
-                <p key={idx} className="my-1 whitespace-pre-wrap">
-                  {line}
-                  {idx === streamingText.split("\n").length - 1 && (
-                    <motion.span
-                      variants={cursorVariants}
-                      animate="blink"
-                      className="inline-block w-2 h-4 ml-0.5 bg-primary rounded-xs align-middle"
-                    />
-                  )}
-                </p>
-              ))}
+          <div className="space-y-1 min-w-0 flex-1">
+            <div className="relative px-4 py-3 rounded-2xl border border-transparent text-sm leading-relaxed text-foreground bg-transparent">
+              <MarkdownRenderer content={streamingText || "..."} />
+              <motion.span
+                variants={cursorVariants}
+                animate="blink"
+                className="inline-block w-2 h-4 ml-1 bg-primary rounded-xs align-middle"
+              />
             </div>
           </div>
         </div>
       )}
+
     </div>
   )
 }

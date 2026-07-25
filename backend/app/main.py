@@ -11,6 +11,7 @@ The Runtime is the only public entry point into Jarvis.
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -18,7 +19,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.FastAPI.routes import router as chat_router
 from app.Auth.routes import router as auth_router
-from app.Config.settings import APP_VERSION
+from app.Config.settings import APP_VERSION, CORS_ORIGINS
 from app.FastAPI.rate_limiter import limiter
 
 app = FastAPI(
@@ -39,6 +40,19 @@ app = FastAPI(
     license_info={
         "name": "MIT",
     },
+)
+
+
+# ---------------------------------------------------------------------------
+# CORS middleware
+# ---------------------------------------------------------------------------
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

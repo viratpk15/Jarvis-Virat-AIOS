@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Send, Paperclip, Mic, FileText, Image, Archive, Code, X, Sparkles } from "lucide-react"
+import { Send, Paperclip, Mic, FileText, Image, Archive, Code, X, Sparkles, Square } from "lucide-react"
 import { attachmentVariants } from "@/lib/motion"
 
 interface Attachment {
@@ -14,13 +14,17 @@ interface ComposerProps {
   inputText: string
   setInputText: (text: string) => void
   disabled: boolean
+  isStreaming?: boolean
+  onStopGeneration?: () => void
 }
 
 export const Composer: React.FC<ComposerProps> = ({
   onSend,
   inputText,
   setInputText,
-  disabled
+  disabled,
+  isStreaming = false,
+  onStopGeneration
 }) => {
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
@@ -46,13 +50,18 @@ export const Composer: React.FC<ComposerProps> = ({
       onSend(inputText.trim(), attachments)
       setInputText("")
       setAttachments([])
+      if (textareaRef.current) {
+        textareaRef.current.focus()
+      }
     }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      handleSend()
+      if (!disabled && !isStreaming) {
+        handleSend()
+      }
     }
   }
 
@@ -126,7 +135,7 @@ export const Composer: React.FC<ComposerProps> = ({
   return (
     <div className="p-4 border-t border-border/80 bg-background/50 backdrop-blur-md shrink-0 space-y-3.5">
       {/* Suggestions Row */}
-      {inputText.trim() === "" && attachments.length === 0 && (
+      {inputText.trim() === "" && attachments.length === 0 && !isStreaming && (
         <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none select-none">
           {quickPrompts.map((item, idx) => (
             <button
@@ -165,7 +174,7 @@ export const Composer: React.FC<ComposerProps> = ({
           onKeyDown={handleKeyDown}
           placeholder="Message Jarvis or instruct agent..."
           rows={1}
-          disabled={disabled}
+          disabled={disabled || isStreaming}
           className="w-full resize-none bg-transparent px-4 pt-4 pb-2 border-none outline-none text-sm text-foreground placeholder:text-muted-foreground/60 max-h-45 overflow-y-auto"
         />
 
@@ -203,7 +212,8 @@ export const Composer: React.FC<ComposerProps> = ({
             {/* Attach button */}
             <button
               onClick={handleAttachMockFile}
-              className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none transition-colors"
+              disabled={disabled || isStreaming}
+              className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none transition-colors disabled:opacity-40"
               title="Attach File Mock"
             >
               <Paperclip className="h-4 w-4" />
@@ -211,7 +221,8 @@ export const Composer: React.FC<ComposerProps> = ({
 
             {/* Voice Notes */}
             <button
-              className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none transition-colors"
+              disabled={disabled || isStreaming}
+              className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none transition-colors disabled:opacity-40"
               title="Voice Prompt Placeholder"
             >
               <Mic className="h-4 w-4" />
@@ -224,18 +235,30 @@ export const Composer: React.FC<ComposerProps> = ({
               {inputText.length} chars
             </span>
 
-            {/* Send */}
-            <button
-              onClick={handleSend}
-              disabled={disabled || (!inputText.trim() && attachments.length === 0)}
-              className="p-1.5 rounded-lg bg-primary hover:bg-primary-foreground text-primary-foreground hover:text-primary transition-all disabled:opacity-40 disabled:hover:bg-primary disabled:hover:text-primary-foreground disabled:cursor-not-allowed cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary shadow shadow-primary/10"
-              title="Send Command"
-            >
-              <Send className="h-3.5 w-3.5" />
-            </button>
+            {/* Stop Generation or Send Button */}
+            {isStreaming ? (
+              <button
+                onClick={onStopGeneration}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-destructive/15 hover:bg-destructive/25 text-destructive border border-destructive/30 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-destructive font-semibold text-xs"
+                title="Stop Generating"
+              >
+                <Square className="h-3 w-3 fill-current" />
+                <span>Stop</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleSend}
+                disabled={disabled || (!inputText.trim() && attachments.length === 0)}
+                className="p-1.5 rounded-lg bg-primary hover:bg-primary-foreground text-primary-foreground hover:text-primary transition-all disabled:opacity-40 disabled:hover:bg-primary disabled:hover:text-primary-foreground disabled:cursor-not-allowed cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary shadow shadow-primary/10"
+                title="Send Command"
+              >
+                <Send className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </div>
     </div>
   )
 }
+

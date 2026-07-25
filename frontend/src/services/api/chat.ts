@@ -41,3 +41,6 @@ export const sendMessageApi = async (session_id: string, message: string): Promi
 }
 
 export const sendMessage = sendMessageApi
+
+export { streamChatMessage as streamChatMessageApi } from "./sse"
+

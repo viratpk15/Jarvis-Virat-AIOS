@@ -13,7 +13,9 @@ frontend error handling.
 POST /chat  — generous rate limit (30/minute)
 """
 
+import logging
 from fastapi import APIRouter, Depends, Request, status
+from fastapi.responses import StreamingResponse
 
 from app.FastAPI.request_models import ChatRequest
 from app.FastAPI.schemas import ChatResponse, ErrorResponse, HealthResponse
@@ -23,6 +25,9 @@ from app.Auth.models import User
 from app.FastAPI.dependencies import verify_session_ownership
 from app.FastAPI.rate_limiter import limiter
 from app.Config.settings import CHAT_RATE_LIMIT
+from app.Jarvis.runtime import jarvis
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -116,3 +121,67 @@ def chat_route(
     )
 
     return ChatResponse(response=answer)
+
+
+@router.post(
+    "/chat/stream",
+    summary="Stream Chat Message via SSE",
+    description=(
+        "Process a chat message within an authenticated session and stream "
+        "incremental token response frames via Server-Sent Events (SSE)."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Server-Sent Events stream.",
+            "content": {"text/event-stream": {}},
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Missing or invalid authentication token.",
+            "model": ErrorResponse,
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "Session does not belong to the authenticated user.",
+            "model": ErrorResponse,
+        },
+        status.HTTP_429_TOO_MANY_REQUESTS: {
+            "description": "Rate limit exceeded. Too many chat requests.",
+            "model": ErrorResponse,
+        },
+    },
+)
+@limiter.limit(CHAT_RATE_LIMIT)
+async def chat_stream_route(
+    request: Request,
+    chat_request: ChatRequest,
+    current_user: User = Depends(get_current_user),
+) -> StreamingResponse:
+    """Stream chat tokens in real-time using Server-Sent Events (SSE).
+
+    Validates JWT authentication and session ownership prior to establishing
+    the streaming connection. Yields structured SSE events (thinking, token, done, error).
+    Detects client disconnects to prevent orphaned generation tasks.
+    """
+    verify_session_ownership(session_id=chat_request.session_id, current_user=current_user)
+
+    async def event_generator():
+        try:
+            for event in jarvis.chat_stream(
+                session_id=chat_request.session_id,
+                message=chat_request.message,
+            ):
+                if await request.is_disconnected():
+                    logger.info("Client disconnected during stream for session %s", chat_request.session_id)
+                    break
+                yield event
+        except Exception as exc:
+            logger.error("Streaming route exception for session %s: %s", chat_request.session_id, str(exc))
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )

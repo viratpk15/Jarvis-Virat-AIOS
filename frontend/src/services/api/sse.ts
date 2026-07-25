@@ -1,13 +1,11 @@
-/**
- * Server-Sent Events (SSE) Interface Foundation
- * Establishes standard structures for token-by-token streaming connections.
- * Note: Implementations will plug directly into Sprint 5.4.
- */
+import { env } from "@/utils/env"
+import { UnauthorizedError, ForbiddenError } from "./errors"
 
 /**
  * Event Types emitted during chat/agent inference runs
  */
 export type StreamEventType = 
+  | "thinking"     // Initial status frame
   | "token"        // Word tokens emitted from LLM
   | "agent_state"  // Transition of graph nodes
   | "tool_output"  // Log lines from execution agents
@@ -42,43 +40,135 @@ export interface CancellationToken {
 }
 
 /**
- * Callback listeners registry for stream connections
+ * Callback listeners registry for structured stream events
  */
-export interface StreamListeners {
+export interface StructuredStreamListeners {
+  onThinking?: (status: string) => void
   onToken?: (token: string) => void
+  onDone?: (response: string) => void
+  onError?: (error: Error) => void
+}
+
+/**
+ * Legacy listeners interface for backward compatibility
+ */
+export interface StreamListeners extends StructuredStreamListeners {
   onAgentState?: (nodeName: string) => void
   onToolOutput?: (logLine: string) => void
-  onError?: (error: Error) => void
-  onDone?: () => void
 }
 
 /**
- * Parser transforming raw buffer chunks into structured StreamEvents
+ * Stream chat message tokens via Server-Sent Events (SSE) using fetch & ReadableStream.
+ * Parses structured SSE event lines (event: thinking, event: token, event: done, event: error).
+ *
+ * @param session_id Unique session identifier bound to user token.
+ * @param message User prompt text.
+ * @param listeners Registry of callbacks for SSE events.
+ * @returns CancellationToken handle to abort generation safely.
  */
-export interface EventParser {
-  parseChunk: (rawChunk: string) => StreamEvent[]
+export const streamChatMessage = (
+  session_id: string,
+  message: string,
+  listeners: StructuredStreamListeners
+): CancellationToken => {
+  const controller = new AbortController()
+  const token = localStorage.getItem("jarvis_access_token")
+
+  const cancellationToken: CancellationToken = {
+    isCancelled: false,
+    abort: () => {
+      cancellationToken.isCancelled = true
+      controller.abort()
+    }
+  }
+
+  ;(async () => {
+    try {
+      const response = await fetch(`${env.apiUrl}/chat/stream`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "text/event-stream",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ session_id, message }),
+        signal: controller.signal
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new UnauthorizedError("Session authentication expired. Please sign in again.")
+        }
+        if (response.status === 403) {
+          throw new ForbiddenError("Session access denied.")
+        }
+        const text = await response.text()
+        throw new Error(text || `HTTP error ${response.status}`)
+      }
+
+      if (!response.body) {
+        throw new Error("No response body returned from SSE endpoint.")
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder("utf-8")
+      let buffer = ""
+      let currentEvent = "token"
+
+      try {
+        while (!cancellationToken.isCancelled) {
+          const { value, done } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split("\n")
+          buffer = lines.pop() || ""
+
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed) continue
+
+            if (trimmed.startsWith("event:")) {
+              currentEvent = trimmed.slice(6).trim()
+            } else if (trimmed.startsWith("data:")) {
+              const rawData = trimmed.slice(5).trim()
+              try {
+                const parsed = JSON.parse(rawData)
+                const eventType = currentEvent || parsed.type || "token"
+
+                if (eventType === "thinking") {
+                  listeners.onThinking?.(parsed.status || "Thinking...")
+                } else if (eventType === "token") {
+                  const tokenStr = parsed.token !== undefined ? parsed.token : (parsed.data || "")
+                  listeners.onToken?.(tokenStr)
+                } else if (eventType === "done") {
+                  const fullResp = parsed.response !== undefined ? parsed.response : (parsed.data || "")
+                  listeners.onDone?.(fullResp)
+                } else if (eventType === "error") {
+                  const errStr = parsed.error !== undefined ? parsed.error : (parsed.data || "Stream error")
+                  listeners.onError?.(new Error(errStr))
+                }
+              } catch {
+                if (currentEvent === "token") {
+                  listeners.onToken?.(rawData)
+                }
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock()
+      }
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        // Stream cancelled cleanly by user
+        return
+      }
+      const errorObj = err instanceof Error ? err : new Error(String(err))
+      listeners.onError?.(errorObj)
+    }
+  })()
+
+  return cancellationToken
 }
 
-/**
- * Core Connection Manager Interface for Server-Sent Events (SSE)
- */
-export interface ISSEClient {
-  /**
-   * Initializes a connection to the target streaming URL
-   * 
-   * @param path API route path (e.g. /chat/stream)
-   * @param params Query/Body parameters
-   * @param listeners Active listeners registry
-   * @returns Cancel token handle
-   */
-  connect: (
-    path: string,
-    params: Record<string, unknown>,
-    listeners: StreamListeners
-  ) => CancellationToken
-
-  /**
-   * Terminate active streams immediately
-   */
-  disconnect: () => void
-}
