@@ -211,7 +211,7 @@ class SQLitePersistenceBackend(IPersistenceBackend):
             message: Message to append.
             position: Message position in session (0-indexed).
         """
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         msg_type = self._get_message_type(message)
 
         with self._get_connection() as conn:
@@ -250,7 +250,7 @@ class SQLitePersistenceBackend(IPersistenceBackend):
             session_id: Unique session identifier.
             summary: New summary text.
         """
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
@@ -281,7 +281,7 @@ class SQLitePersistenceBackend(IPersistenceBackend):
             session_id: Unique session identifier.
             messages: New message window to persist.
         """
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
@@ -396,7 +396,7 @@ class SQLitePersistenceBackend(IPersistenceBackend):
             session_id: Unique session identifier.
             user_id: The user's database ID.
         """
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
@@ -418,7 +418,7 @@ class SQLitePersistenceBackend(IPersistenceBackend):
             position: Message position in session.
             embedding: Embedding vector as list of floats.
         """
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         embedding_blob = json.dumps(embedding).encode()
 
         with self._get_connection() as conn:
@@ -439,7 +439,7 @@ class SQLitePersistenceBackend(IPersistenceBackend):
             session_id: Unique session identifier.
             embedding: Embedding vector as list of floats.
         """
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         embedding_blob = json.dumps(embedding).encode()
 
         with self._get_connection() as conn:
@@ -526,7 +526,7 @@ class SQLitePersistenceBackend(IPersistenceBackend):
             session_id: Unique session identifier.
             execution_state: Execution state dictionary.
         """
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         current_plan = json.dumps(execution_state.get("current_plan"))
         completed_steps = json.dumps(execution_state.get("completed_steps", []))
         pending_steps = json.dumps(execution_state.get("pending_steps", []))

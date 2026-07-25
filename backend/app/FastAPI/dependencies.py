@@ -9,14 +9,11 @@ These dependencies are injected via Depends() into route handlers.
 
 from __future__ import annotations
 
-import sqlite3
-from pathlib import Path
-
 from fastapi import Depends, HTTPException, status
 
 from app.Auth.dependencies import get_current_user
 from app.Auth.models import User
-from app.Config.settings import PERSISTENCE_DB_PATH
+from app.Memory.persistence import get_persistence_backend
 
 
 def verify_session_ownership(
@@ -40,18 +37,10 @@ def verify_session_ownership(
     Raises:
         HTTPException: 403 if the session belongs to a different user.
     """
-    db_path = PERSISTENCE_DB_PATH
-    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+    persistence = get_persistence_backend()
+    owner_id = persistence.get_session_owner(session_id)
 
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT user_id FROM sessions WHERE session_id = ?",
-            (session_id,),
-        )
-        row = cursor.fetchone()
-
-    if row is not None and row[0] != current_user.id:
+    if owner_id is not None and owner_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={
