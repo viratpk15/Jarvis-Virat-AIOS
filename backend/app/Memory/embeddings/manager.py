@@ -12,7 +12,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, System
 
 if TYPE_CHECKING:
     from app.Memory.embeddings.providers import EmbeddingProvider
-    from app.Memory.persistence.sqlite_backend import SQLitePersistenceBackend
+    from app.Memory.persistence.base import IPersistenceBackend
 
 logger = logging.getLogger(__name__)
 
@@ -21,18 +21,18 @@ class EmbeddingManager:
     """Manages embedding generation for semantic memory.
 
     Coordinates embedding generation for messages and summaries,
-    and persists embeddings to SQLite for future retrieval.
+    and persists embeddings to storage for future retrieval.
 
     Attributes:
         provider: EmbeddingProvider instance for generating embeddings.
-        persistence: SQLitePersistenceBackend for storing embeddings.
+        persistence: IPersistenceBackend for storing embeddings.
         enabled: Whether embedding generation is enabled.
     """
 
     def __init__(
         self,
         provider: "EmbeddingProvider",
-        persistence: "SQLitePersistenceBackend | None" = None,
+        persistence: "IPersistenceBackend | None" = None,
         enabled: bool = True,
     ):
         """Initialize embedding manager.

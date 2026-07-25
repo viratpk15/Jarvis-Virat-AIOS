@@ -13,8 +13,10 @@ from typing import Any
 
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
 
+from app.Memory.persistence.base import IPersistenceBackend
 
-class SQLitePersistenceBackend:
+
+class SQLitePersistenceBackend(IPersistenceBackend):
     """SQLite-backed persistent storage for memory.
 
     Stores conversation history, summaries, and session metadata in SQLite.

@@ -1,11 +1,11 @@
 """
 Memory Persistence Layer
 
-Provides SQLite-backed persistent storage for conversation history and summaries.
-All persistence operations are encapsulated in this layer to ensure clean separation
-of concerns and prevent SQL injection through parameterized queries.
+Provides provider-independent persistent storage for conversation history and summaries.
+Supports both SQLite (local development) and PostgreSQL (production).
 """
 
-from app.Memory.persistence.sqlite_backend import SQLitePersistenceBackend
+from app.Memory.persistence.base import IPersistenceBackend
+from app.Memory.persistence.provider import get_persistence_backend
 
-__all__ = ["SQLitePersistenceBackend"]
+__all__ = ["IPersistenceBackend", "get_persistence_backend"]

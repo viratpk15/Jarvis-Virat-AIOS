@@ -13,7 +13,7 @@ from typing import Any
 from langchain_core.messages import BaseMessage
 
 from app.Memory.embeddings.manager import EmbeddingManager
-from app.Memory.persistence.sqlite_backend import SQLitePersistenceBackend
+from app.Memory.persistence.base import IPersistenceBackend
 from app.Memory.semantic.ranker import MemoryRanker, RetrievedMemory
 from app.Observability.manager import observability_manager
 
@@ -65,14 +65,14 @@ class SemanticRetriever:
 
     Attributes:
         embedding_manager: EmbeddingManager for generating query embeddings.
-        persistence: SQLitePersistenceBackend for loading stored embeddings.
+        persistence: IPersistenceBackend for loading stored embeddings.
         similarity_threshold: Minimum similarity score for inclusion.
     """
 
     def __init__(
         self,
         embedding_manager: EmbeddingManager,
-        persistence: SQLitePersistenceBackend,
+        persistence: IPersistenceBackend,
         similarity_threshold: float = 0.5,
     ):
         """Initialize semantic retriever.

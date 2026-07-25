@@ -25,10 +25,12 @@ from app.Data.models import (
     SummaryEmbeddingModel,
 )
 
+from app.Memory.persistence.base import IPersistenceBackend
+
 logger = logging.getLogger(__name__)
 
 
-class PostgreSQLPersistenceBackend:
+class PostgreSQLPersistenceBackend(IPersistenceBackend):
     """PostgreSQL-backed persistent storage for memory.
 
     Stores conversation history, summaries, session metadata, and embeddings in PostgreSQL (Supabase).

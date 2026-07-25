@@ -7,10 +7,9 @@ from app.Memory.storage import storage
 from app.Memory.window import WindowManager, WindowedChatMessageHistory
 from app.Memory.summarization import SummaryManager
 from app.LLM.client import llm
-from app.Memory.persistence import SQLitePersistenceBackend
+from app.Memory.persistence import IPersistenceBackend, get_persistence_backend
 from app.Memory.embeddings import EmbeddingManager, LocalEmbeddingProvider
 from app.Memory.semantic import SemanticRetriever
-from app.Config.settings import PERSISTENCE_DB_PATH
 from app.Observability.trace import measure_time, calculate_duration
 from app.Observability.manager import observability_manager
 
@@ -38,7 +37,7 @@ SEMANTIC_SIMILARITY_THRESHOLD: float = 0.5
 
 
 class MemoryManager:
-    def __init__(self):
+    def __init__(self, persistence: IPersistenceBackend | None = None):
         """Initialize memory manager with window, summarization, persistence, and embeddings."""
         self._window_manager = WindowManager(window_size=WINDOW_SIZE)
         self._summary_manager = SummaryManager(
@@ -46,7 +45,7 @@ class MemoryManager:
             threshold=SUMMARIZATION_THRESHOLD,
             keep_recent=SUMMARIZATION_KEEP_RECENT,
         )
-        self._persistence = SQLitePersistenceBackend(db_path=PERSISTENCE_DB_PATH)
+        self._persistence: IPersistenceBackend = persistence or get_persistence_backend()
         self._hydrated_sessions: set[str] = set()  # Track hydrated sessions
 
         # Initialize embedding manager

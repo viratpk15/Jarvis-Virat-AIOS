@@ -14,7 +14,7 @@ from langchain_core.chat_history import InMemoryChatMessageHistory
 if TYPE_CHECKING:
     from app.Memory.window.window_manager import WindowManager
     from app.Memory.summarization.summary_manager import SummaryManager
-    from app.Memory.persistence.sqlite_backend import SQLitePersistenceBackend
+    from app.Memory.persistence.base import IPersistenceBackend
     from app.Memory.embeddings.manager import EmbeddingManager
 
 
@@ -37,7 +37,7 @@ class WindowedChatMessageHistory:
         window_manager: "WindowManager",
         history: InMemoryChatMessageHistory | None = None,
         summary_manager: "SummaryManager | None" = None,
-        persistence: "SQLitePersistenceBackend | None" = None,
+        persistence: "IPersistenceBackend | None" = None,
         session_id: str | None = None,
         summary: str | None = None,
         embedding_manager: "EmbeddingManager | None" = None,
