@@ -472,3 +472,123 @@ class PostgreSQLPersistenceBackend(IPersistenceBackend):
         elif isinstance(message, SystemMessage):
             return "system"
         return "unknown"
+
+    # ---------------------------------------------------------------------------
+    # Conversation CRUD Operations
+    # ---------------------------------------------------------------------------
+
+    def create_conversation(
+        self, session_id: str, user_id: int, title: str = "New Conversation"
+    ) -> dict[str, Any]:
+        """Create a new conversation session for a user."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._get_session() as db:
+            session_obj = SessionModel(
+                session_id=session_id,
+                user_id=user_id,
+                title=title,
+                pinned=0,
+                summary=None,
+                created_at=now,
+                last_accessed=now,
+            )
+            db.add(session_obj)
+            db.commit()
+
+        return {
+            "session_id": session_id,
+            "user_id": user_id,
+            "title": title,
+            "pinned": 0,
+            "created_at": now,
+            "last_accessed": now,
+        }
+
+    def list_conversations_for_user(self, user_id: int) -> list[dict[str, Any]]:
+        """List all conversation sessions belonging to a user."""
+        with self._get_session() as db:
+            rows = db.execute(
+                select(SessionModel)
+                .where(SessionModel.user_id == user_id)
+                .order_by(SessionModel.pinned.desc(), SessionModel.last_accessed.desc())
+            ).scalars().all()
+
+            return [
+                {
+                    "session_id": r.session_id,
+                    "title": r.title if r.title else "Conversation",
+                    "pinned": bool(r.pinned),
+                    "created_at": r.created_at,
+                    "last_accessed": r.last_accessed,
+                }
+                for r in rows
+            ]
+
+    def get_conversation(self, session_id: str) -> dict[str, Any] | None:
+        """Get a conversation session metadata dict by session_id."""
+        with self._get_session() as db:
+            r = db.execute(
+                select(SessionModel).where(SessionModel.session_id == session_id)
+            ).scalar_one_or_none()
+            if not r:
+                return None
+            return {
+                "session_id": r.session_id,
+                "user_id": r.user_id,
+                "title": r.title if r.title else "Conversation",
+                "pinned": bool(r.pinned),
+                "created_at": r.created_at,
+                "last_accessed": r.last_accessed,
+            }
+
+    def rename_conversation(
+        self, session_id: str, user_id: int, title: str
+    ) -> dict[str, Any] | None:
+        """Rename a conversation session if owned by user_id."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._get_session() as db:
+            session_obj = db.execute(
+                select(SessionModel).where(SessionModel.session_id == session_id)
+            ).scalar_one_or_none()
+
+            if not session_obj or session_obj.user_id != user_id:
+                return None
+
+            session_obj.title = title
+            session_obj.last_accessed = now
+            db.commit()
+
+        return self.get_conversation(session_id)
+
+    def pin_conversation(
+        self, session_id: str, user_id: int, pinned: bool
+    ) -> dict[str, Any] | None:
+        """Update pinned status for a conversation session if owned by user_id."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._get_session() as db:
+            session_obj = db.execute(
+                select(SessionModel).where(SessionModel.session_id == session_id)
+            ).scalar_one_or_none()
+
+            if not session_obj or session_obj.user_id != user_id:
+                return None
+
+            session_obj.pinned = 1 if pinned else 0
+            session_obj.last_accessed = now
+            db.commit()
+
+        return self.get_conversation(session_id)
+
+    def delete_conversation(self, session_id: str, user_id: int) -> bool:
+        """Delete a conversation session and all its messages if owned by user_id."""
+        with self._get_session() as db:
+            session_obj = db.execute(
+                select(SessionModel).where(SessionModel.session_id == session_id)
+            ).scalar_one_or_none()
+
+            if not session_obj or session_obj.user_id != user_id:
+                return False
+
+            db.delete(session_obj)
+            db.commit()
+            return True

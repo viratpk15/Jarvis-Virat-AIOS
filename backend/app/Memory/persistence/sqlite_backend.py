@@ -7,7 +7,7 @@ All SQL operations use parameterized queries to prevent SQL injection.
 
 import json
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -589,3 +589,130 @@ class SQLitePersistenceBackend(IPersistenceBackend):
                 (session_id,)
             )
             conn.commit()
+
+    # ---------------------------------------------------------------------------
+    # Conversation CRUD Operations
+    # ---------------------------------------------------------------------------
+
+    def create_conversation(
+        self, session_id: str, user_id: int, title: str = "New Conversation"
+    ) -> dict[str, Any]:
+        """Create a new conversation session for a user."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO sessions (session_id, user_id, title, pinned, created_at, last_accessed)
+                VALUES (?, ?, ?, 0, ?, ?)
+                """,
+                (session_id, user_id, title, now, now),
+            )
+            conn.commit()
+        return {
+            "session_id": session_id,
+            "user_id": user_id,
+            "title": title,
+            "pinned": 0,
+            "created_at": now,
+            "last_accessed": now,
+        }
+
+    def list_conversations_for_user(self, user_id: int) -> list[dict[str, Any]]:
+        """List all conversation sessions belonging to a user."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT session_id, title, pinned, created_at, last_accessed
+                FROM sessions
+                WHERE user_id = ?
+                ORDER BY pinned DESC, last_accessed DESC
+                """,
+                (user_id,),
+            )
+            rows = cursor.fetchall()
+
+        return [
+            {
+                "session_id": r[0],
+                "title": r[1] if r[1] else "Conversation",
+                "pinned": bool(r[2]),
+                "created_at": r[3],
+                "last_accessed": r[4],
+            }
+            for r in rows
+        ]
+
+    def get_conversation(self, session_id: str) -> dict[str, Any] | None:
+        """Get a conversation session metadata dict by session_id."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT session_id, user_id, title, pinned, created_at, last_accessed
+                FROM sessions
+                WHERE session_id = ?
+                """,
+                (session_id,),
+            )
+            row = cursor.fetchone()
+            if not row:
+                return None
+            return {
+                "session_id": row[0],
+                "user_id": row[1],
+                "title": row[2] if row[2] else "Conversation",
+                "pinned": bool(row[3]),
+                "created_at": row[4],
+                "last_accessed": row[5],
+            }
+
+    def rename_conversation(
+        self, session_id: str, user_id: int, title: str
+    ) -> dict[str, Any] | None:
+        """Rename a conversation session if owned by user_id."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE sessions SET title = ?, last_accessed = ? WHERE session_id = ? AND user_id = ?",
+                (title, now, session_id, user_id),
+            )
+            conn.commit()
+            if cursor.rowcount == 0:
+                return None
+
+        return self.get_conversation(session_id)
+
+    def pin_conversation(
+        self, session_id: str, user_id: int, pinned: bool
+    ) -> dict[str, Any] | None:
+        """Update pinned status for a conversation session if owned by user_id."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE sessions SET pinned = ?, last_accessed = ? WHERE session_id = ? AND user_id = ?",
+                (1 if pinned else 0, now, session_id, user_id),
+            )
+            conn.commit()
+            if cursor.rowcount == 0:
+                return None
+
+        return self.get_conversation(session_id)
+
+    def delete_conversation(self, session_id: str, user_id: int) -> bool:
+        """Delete a conversation session and all its messages if owned by user_id."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM messages WHERE session_id IN (SELECT session_id FROM sessions WHERE session_id = ? AND user_id = ?)",
+                (session_id, user_id),
+            )
+            cursor.execute(
+                "DELETE FROM sessions WHERE session_id = ? AND user_id = ?",
+                (session_id, user_id),
+            )
+            conn.commit()
+            return cursor.rowcount > 0

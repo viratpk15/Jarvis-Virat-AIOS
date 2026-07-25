@@ -91,3 +91,43 @@ class IPersistenceBackend(ABC):
     def clear_execution_state(self, session_id: str) -> None:
         """Clear plan execution state for a session."""
         pass
+
+    # ---------------------------------------------------------------------------
+    # Conversation CRUD Operations
+    # ---------------------------------------------------------------------------
+
+    @abstractmethod
+    def create_conversation(
+        self, session_id: str, user_id: int, title: str = "New Conversation"
+    ) -> dict[str, Any]:
+        """Create a new conversation session for a user."""
+        pass
+
+    @abstractmethod
+    def list_conversations_for_user(self, user_id: int) -> list[dict[str, Any]]:
+        """List all conversation sessions belonging to a user."""
+        pass
+
+    @abstractmethod
+    def get_conversation(self, session_id: str) -> dict[str, Any] | None:
+        """Get a conversation session metadata dict by session_id."""
+        pass
+
+    @abstractmethod
+    def rename_conversation(
+        self, session_id: str, user_id: int, title: str
+    ) -> dict[str, Any] | None:
+        """Rename a conversation session if owned by user_id."""
+        pass
+
+    @abstractmethod
+    def pin_conversation(
+        self, session_id: str, user_id: int, pinned: bool
+    ) -> dict[str, Any] | None:
+        """Update pinned status for a conversation session if owned by user_id."""
+        pass
+
+    @abstractmethod
+    def delete_conversation(self, session_id: str, user_id: int) -> bool:
+        """Delete a conversation session and all its messages if owned by user_id."""
+        pass
