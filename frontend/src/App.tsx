@@ -1,8 +1,9 @@
-import { Suspense, lazy } from "react"
-import { BrowserRouter, Routes, Route, Navigate } from "react-router"
+import { Suspense, lazy, useEffect } from "react"
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router"
 import { RootProvider } from "@/providers"
 import AppShell from "@/components/layout/AppShell"
 import { LoadingIndicator } from "@/components/common/LoadingIndicator"
+import { useAuthStore, restoreUserSession } from "@/services/store/authStore"
 
 // Lazy load page features to optimize performance
 const DashboardPage = lazy(() => import("@/features/Dashboard/DashboardPage"))
@@ -13,25 +14,69 @@ const FilesPage = lazy(() => import("@/features/Files/FilesPage"))
 const ToolsPage = lazy(() => import("@/features/Tools/ToolsPage"))
 const ModelsPage = lazy(() => import("@/features/Models/ModelsPage"))
 const SettingsPage = lazy(() => import("@/features/Settings/SettingsPage"))
+const AuthPage = lazy(() => import("@/features/Auth/AuthPage"))
+
+/**
+ * Route protection wrapper requiring active user authentication
+ */
+function ProtectedRoute() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const isRestored = useAuthStore((state) => state.isRestored)
+
+  if (!isRestored) {
+    return <LoadingIndicator fullScreen message="Checking session token..." />
+  }
+
+  return isAuthenticated ? <Outlet /> : <Navigate to="/auth" replace />
+}
+
+/**
+ * Public route wrapper for login/registration forms
+ */
+function AnonymousRoute() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const isRestored = useAuthStore((state) => state.isRestored)
+
+  if (!isRestored) {
+    return <LoadingIndicator fullScreen message="Checking token status..." />
+  }
+
+  return !isAuthenticated ? <Outlet /> : <Navigate to="/dashboard" replace />
+}
 
 function App() {
+  // Sync and restore token session on application boot
+  useEffect(() => {
+    restoreUserSession()
+  }, [])
+
   return (
     <RootProvider>
       <BrowserRouter>
         <Suspense fallback={<LoadingIndicator fullScreen message="Loading system components..." />}>
           <Routes>
-            <Route path="/" element={<AppShell />}>
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<DashboardPage />} />
-              <Route path="workspace" element={<WorkspacePage />} />
-              <Route path="agents" element={<AgentsPage />} />
-              <Route path="memory" element={<MemoryPage />} />
-              <Route path="files" element={<FilesPage />} />
-              <Route path="tools" element={<ToolsPage />} />
-              <Route path="models" element={<ModelsPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* Public/Anonymous auth entry */}
+            <Route element={<AnonymousRoute />}>
+              <Route path="auth" element={<AuthPage />} />
             </Route>
+
+            {/* Protected system environment routing */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/" element={<AppShell />}>
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="workspace" element={<WorkspacePage />} />
+                <Route path="agents" element={<AgentsPage />} />
+                <Route path="memory" element={<MemoryPage />} />
+                <Route path="files" element={<FilesPage />} />
+                <Route path="tools" element={<ToolsPage />} />
+                <Route path="models" element={<ModelsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
+            </Route>
+
+            {/* Fallback queries */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Suspense>
       </BrowserRouter>

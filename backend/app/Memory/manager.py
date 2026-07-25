@@ -6,6 +6,7 @@ from langchain_core.messages import BaseMessage
 from app.Memory.storage import storage
 from app.Memory.window import WindowManager, WindowedChatMessageHistory
 from app.Memory.summarization import SummaryManager
+from app.LLM.client import llm
 from app.Memory.persistence import SQLitePersistenceBackend
 from app.Memory.embeddings import EmbeddingManager, LocalEmbeddingProvider
 from app.Memory.semantic import SemanticRetriever
@@ -41,6 +42,7 @@ class MemoryManager:
         """Initialize memory manager with window, summarization, persistence, and embeddings."""
         self._window_manager = WindowManager(window_size=WINDOW_SIZE)
         self._summary_manager = SummaryManager(
+            llm=llm,
             threshold=SUMMARIZATION_THRESHOLD,
             keep_recent=SUMMARIZATION_KEEP_RECENT,
         )
