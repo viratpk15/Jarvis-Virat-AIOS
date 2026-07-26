@@ -13,6 +13,7 @@ const MemoryPage = lazy(() => import("@/features/Memory/MemoryPage"))
 const FilesPage = lazy(() => import("@/features/Files/FilesPage"))
 const ToolsPage = lazy(() => import("@/features/Tools/ToolsPage"))
 const PromptsPage = lazy(() => import("@/features/Prompts/PromptsPage"))
+const RAGPage = lazy(() => import("@/features/RAG/RAGPage"))
 const ModelsPage = lazy(() => import("@/features/Models/ModelsPage"))
 const SettingsPage = lazy(() => import("@/features/Settings/SettingsPage"))
 const AuthPage = lazy(() => import("@/features/Auth/AuthPage"))
@@ -72,6 +73,7 @@ function App() {
                 <Route path="files" element={<FilesPage />} />
                 <Route path="tools" element={<ToolsPage />} />
                 <Route path="prompts" element={<PromptsPage />} />
+                <Route path="rag" element={<RAGPage />} />
                 <Route path="models" element={<ModelsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
