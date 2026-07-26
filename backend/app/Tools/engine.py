@@ -4,182 +4,102 @@ Jarvis AIOS
 Tool Engine
 
 Single execution gate for all tool invocations.
-Enforces input validation, tool name safety checks,
-and provides clean security-focused error messages.
+Enforces input validation, permission validation, modular pipeline execution,
+and returns standardized provider-independent ToolResult objects.
 """
 
-from typing import Any
+import asyncio
+from typing import Any, Dict, Optional, AsyncGenerator
 
-from app.Tools.registry import registry
-from app.Observability.trace import measure_time, calculate_duration
-from app.Observability.manager import observability_manager
-
-# Maximum allowed length for a tool name string.
-_MAX_TOOL_NAME_LENGTH: int = 64
-
-# Maximum total size (in characters) for tool arguments JSON.
-# Prevents resource exhaustion via oversized argument payloads.
-_MAX_ARGUMENTS_CHARS: int = 100_000
-
-# Allowed characters in tool names: alphanumeric, underscore, hyphen.
-# Prevents injection through malformed tool name strings.
-_ALLOWED_TOOL_NAME_CHARS: set[str] = set(
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
-)
-
-
-def _validate_tool_name(tool_name: str) -> None:
-    """Validate that a tool name is safe and well-formed.
-
-    Rejects empty names, excessively long names, and names containing
-    characters outside the allowed set. This prevents injection attacks
-    that might attempt to manipulate internal state through malformed
-    tool name strings.
-
-    Args:
-        tool_name: The tool name string to validate.
-
-    Raises:
-        ValueError: If the tool name is invalid or unsafe.
-    """
-    if not isinstance(tool_name, str):
-        raise ValueError(
-            "Tool name must be a string. "
-            f"Received {type(tool_name).__name__}."
-        )
-
-    if not tool_name.strip():
-        raise ValueError(
-            "Tool name must not be empty."
-        )
-
-    if len(tool_name) > _MAX_TOOL_NAME_LENGTH:
-        raise ValueError(
-            f"Tool name too long. Maximum length is "
-            f"{_MAX_TOOL_NAME_LENGTH} characters."
-        )
-
-    # Reject characters outside the safe set
-    for char in tool_name:
-        if char not in _ALLOWED_TOOL_NAME_CHARS:
-            raise ValueError(
-                f"Tool name contains unsafe character: "
-                f"'{char}' (code point {ord(char)}). "
-                "Only alphanumeric characters, underscores, "
-                "and hyphens are allowed."
-            )
-
-
-def _validate_arguments(kwargs: dict[str, Any]) -> None:
-    """Validate tool arguments for safety and size limits.
-
-    Ensures arguments are a valid dict and do not exceed maximum
-    total character size, preventing resource exhaustion attacks
-    through oversized payloads.
-
-    Args:
-        kwargs: The tool arguments dict to validate.
-
-    Raises:
-        ValueError: If arguments are invalid or exceed size limits.
-    """
-    if not isinstance(kwargs, dict):
-        raise ValueError(
-            "Tool arguments must be a dictionary. "
-            f"Received {type(kwargs).__name__}."
-        )
-
-    # Calculate approximate total character size of arguments
-    total_chars = sum(
-        len(str(key)) + len(str(value))
-        for key, value in kwargs.items()
-    )
-
-    if total_chars > _MAX_ARGUMENTS_CHARS:
-        raise ValueError(
-            f"Tool arguments too large. Total size "
-            f"({total_chars} characters) exceeds the maximum "
-            f"of {_MAX_ARGUMENTS_CHARS} characters."
-        )
+from app.Tools.metadata import ToolResult, ExecutionStatus
+from app.Tools.pipeline import pipeline
 
 
 class ToolEngine:
     """
     Single execution gate for all tool invocations.
-
-    Validates tool names and arguments before delegation to the
-    registry. Provides clean, security-focused error messages
-    that do not leak internal implementation details.
+    Delegates to modular ExecutionPipeline and ensures provider-independent
+    ToolResult return objects while maintaining 100% backward compatibility.
     """
+
+    async def execute_async(
+        self,
+        tool_name: str,
+        caller_context: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> ToolResult:
+        """
+        Execute a tool asynchronously through the modular pipeline.
+
+        Returns:
+            Provider-independent ToolResult object.
+        """
+        return await pipeline.run_async(
+            tool_name=tool_name,
+            kwargs=kwargs,
+            caller_context=caller_context,
+        )
+
+    async def execute_stream(
+        self,
+        tool_name: str,
+        caller_context: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> AsyncGenerator[Any, None]:
+        """
+        Stream tool output chunks asynchronously.
+        """
+        async for chunk in pipeline.run_stream(
+            tool_name=tool_name,
+            kwargs=kwargs,
+            caller_context=caller_context,
+        ):
+            yield chunk
 
     def execute(
         self,
         tool_name: str,
+        caller_context: Optional[Dict[str, Any]] = None,
+        return_result_object: bool = False,
         **kwargs: Any,
     ) -> Any:
-        """Execute a tool by name with validated arguments.
-
-        Tool names and arguments are validated for safety before
-        any registry lookup or execution occurs. Invalid inputs
-        are rejected with clear error messages.
+        """
+        Execute a tool synchronously with backward-compatible return handling.
 
         Args:
-            tool_name: The registered name of the tool to execute.
+            tool_name: Registered name of the tool.
+            caller_context: Optional caller context dictionary.
+            return_result_object: If True, returns full ToolResult.
+                                  If False (default), returns raw output or raises ValueError on error.
             **kwargs: Arguments to pass to the tool.
 
         Returns:
-            The result of the tool execution.
-
-        Raises:
-            ValueError: If the tool name or arguments are invalid,
-                the tool is not registered, or execution fails.
+            ToolResult object if return_result_object=True, else raw output.
         """
-        # Validate inputs before any registry or tool interaction
-        _validate_tool_name(tool_name)
-        _validate_arguments(kwargs)
-
-        # Look up the tool in the registry
         try:
-            tool = registry.get(tool_name)
-        except ValueError as e:
-            raise ValueError(
-                f"Tool '{tool_name}' is not available."
-            ) from e
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
 
-        # Execute the tool with validated arguments
-        start_time = measure_time()
-        try:
-            result = tool.execute(**kwargs)
-        except ValueError as e:
-            # Re-raise tool-level validation errors as-is
-            # (they are already clean security-focused messages)
-            observability_manager.record_tool_call(
-                tool_name=tool_name,
-                duration_ms=calculate_duration(start_time),
-                success=False,
-                error=str(e),
+        if loop and loop.is_running():
+            # Running inside an event loop (e.g. FastAPI async handler)
+            import nest_asyncio
+            nest_asyncio.apply()
+            result: ToolResult = loop.run_until_complete(
+                self.execute_async(tool_name, caller_context=caller_context, **kwargs)
             )
-            raise
-        except Exception:
-            error_msg = (
-                f"An error occurred while executing "
-                f"the '{tool_name}' tool. Please check your "
-                "inputs and try again."
-            )
-            observability_manager.record_tool_call(
-                tool_name=tool_name,
-                duration_ms=calculate_duration(start_time),
-                success=False,
-                error=error_msg,
-            )
-            raise ValueError(error_msg)
         else:
-            observability_manager.record_tool_call(
-                tool_name=tool_name,
-                duration_ms=calculate_duration(start_time),
-                success=True,
+            result: ToolResult = asyncio.run(
+                self.execute_async(tool_name, caller_context=caller_context, **kwargs)
             )
+
+        if return_result_object:
             return result
+
+        if result.status != ExecutionStatus.SUCCESS:
+            raise ValueError(result.error or f"Tool '{tool_name}' execution failed with status {result.status.value}.")
+
+        return result.output
 
 
 engine = ToolEngine()
