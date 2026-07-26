@@ -96,3 +96,4 @@ pip-wheel-metadata/
 
 # Runtime Data (repository root only)
 /data/
+.private/

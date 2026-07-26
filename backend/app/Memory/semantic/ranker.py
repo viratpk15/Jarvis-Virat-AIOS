@@ -8,8 +8,7 @@ heuristics for importance detection without LLM calls.
 
 import math
 import logging
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 from collections import Counter
 
 from langchain_core.messages import BaseMessage

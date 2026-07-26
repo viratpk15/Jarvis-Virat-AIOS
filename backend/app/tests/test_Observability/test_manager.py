@@ -9,7 +9,7 @@ import time
 
 from app.Observability.manager import observability_manager
 from app.Observability.trace import trace_context, measure_time, calculate_duration
-from app.Observability.models import ExecutionTrace, ToolCall
+from app.Observability.models import ExecutionTrace
 
 
 def _reset_manager() -> None:

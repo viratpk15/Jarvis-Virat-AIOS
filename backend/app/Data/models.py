@@ -8,8 +8,6 @@ and execution state for PostgreSQL (Supabase) and database migration support.
 """
 
 from sqlalchemy import (
-    BigInteger,
-    Boolean,
     Column,
     ForeignKey,
     Index,

@@ -11,7 +11,7 @@ from typing import Any
 
 from app.Agents.agent import Agent
 from app.Models.agent_config import AgentConfig
-from app.MCP import get_github_server, get_filesystem_server
+from app.MCP import get_github_server
 
 
 # Global CodingAgent instance

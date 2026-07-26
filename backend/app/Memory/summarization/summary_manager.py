@@ -8,7 +8,6 @@ of older messages when conversations exceed configured thresholds.
 from typing import TYPE_CHECKING
 
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage, AIMessage
-from langchain_core.chat_history import BaseChatMessageHistory
 
 if TYPE_CHECKING:
     from app.LLM.client import llm

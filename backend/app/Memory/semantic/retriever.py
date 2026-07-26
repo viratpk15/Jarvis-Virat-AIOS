@@ -8,7 +8,6 @@ without external dependencies. Uses MemoryRanker for multi-factor ranking.
 
 import math
 import logging
-from typing import Any
 
 from langchain_core.messages import BaseMessage
 

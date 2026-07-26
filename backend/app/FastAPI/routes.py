@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # Include conversation routes
-from app.FastAPI.routes_conversations import router as conversations_router
+from app.FastAPI.routes_conversations import router as conversations_router  # noqa: E402
 router.include_router(conversations_router)
 
 

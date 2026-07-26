@@ -14,7 +14,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import ValidationError
 
 from app.LLM.client import llm
-from app.Models.plan import Plan, PlanStep
+from app.Models.plan import Plan
 from app.LangGraph.state import State
 from app.Observability.trace import measure_time, calculate_duration
 from app.Observability.manager import observability_manager
@@ -326,7 +326,7 @@ def planner(state: State):
         recent_messages.append(f"{msg.__class__.__name__}: {msg.content}")
 
     if recent_messages:
-        context_parts.append(f"Recent Conversation:\n" + "\n".join(recent_messages[-10:]))
+        context_parts.append("Recent Conversation:\n" + "\n".join(recent_messages[-10:]))
 
     # Add execution outcome if present
     execution_outcome = state.get("execution_outcome")

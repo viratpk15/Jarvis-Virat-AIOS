@@ -8,7 +8,7 @@ The agent node must validate every LLM response against these
 models before using them as execution instructions.
 """
 
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 

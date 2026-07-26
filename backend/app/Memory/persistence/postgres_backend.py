@@ -9,7 +9,7 @@ Implements the exact interface contract as SQLitePersistenceBackend.
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Any, Sequence
+from typing import Any
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from sqlalchemy import delete, select

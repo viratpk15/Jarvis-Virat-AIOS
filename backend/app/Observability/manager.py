@@ -17,7 +17,6 @@ import time
 import uuid
 from collections import deque
 from contextvars import ContextVar
-from typing import Any
 
 from app.Observability.models import ExecutionTrace, ToolCall
 

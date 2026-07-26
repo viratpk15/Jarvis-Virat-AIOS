@@ -21,7 +21,7 @@ from pydantic import ValidationError
 from app.LLM.client import llm
 from app.Memory.manager import memory_manager
 from app.Prompts.agent import AGENT_PROMPT
-from app.Models.action import ParsedAction, FinalAction
+from app.Models.action import ParsedAction
 from app.Tools.registry import registry
 
 from app.LangGraph.state import State

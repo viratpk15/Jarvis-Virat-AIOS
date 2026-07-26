@@ -5,7 +5,6 @@ These tests verify the deterministic recovery engine and policy without
 requiring any external services (LLM, network, or database).
 """
 
-import time
 
 from app.LangGraph.recovery.policy import (
     MAX_TOOL_RETRIES,

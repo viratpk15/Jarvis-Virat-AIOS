@@ -70,7 +70,7 @@ class TestRegistration:
     def test_register_password_is_hashed(self, test_db: UserDatabase) -> None:
         """Stored password must be a bcrypt hash, never plaintext."""
         pw_hash = hash_password("my_secret_password")
-        user_id = test_db.create_user("carol@example.com", pw_hash)
+        test_db.create_user("carol@example.com", pw_hash)
         stored = test_db.get_user_by_email("carol@example.com")
         assert stored is not None
         assert stored["password_hash"] != "my_secret_password"
@@ -271,7 +271,6 @@ class TestSessionOwnership:
 
     def test_new_session_allowed(self) -> None:
         """A session that doesn't exist yet is allowed (creation-on-demand)."""
-        from app.Auth.models import User
         from app.FastAPI.dependencies import verify_session_ownership
 
         # A nonexistent session with a valid user passes (returns User)
@@ -281,7 +280,6 @@ class TestSessionOwnership:
 
     def test_owner_matches(self) -> None:
         """A session bound to the requesting user passes verification."""
-        from app.Auth.models import User
         from app.FastAPI.dependencies import verify_session_ownership
 
         _seed_session("owned-session", user_id=5)
@@ -292,7 +290,6 @@ class TestSessionOwnership:
     def test_owner_mismatch(self) -> None:
         """A session bound to a different user fails with 403."""
         from fastapi import HTTPException
-        from app.Auth.models import User
         from app.FastAPI.dependencies import verify_session_ownership
 
         _seed_session("foreign-session", user_id=10)
