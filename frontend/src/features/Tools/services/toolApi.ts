@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { apiClient } from "@/services/api/apiClient"
-import type { ToolMetadata, ToolDetailsResponse } from "../types/tools.types"
+import type { ToolMetadata, ToolDetailsResponse, ToolResult } from "../types/tools.types"
 
 /**
  * Fetch all registered tools from GET /api/v1/tools
@@ -31,13 +31,100 @@ export async function fetchToolDetails(toolName: string): Promise<ToolDetailsRes
 }
 
 /**
+ * Execute tool via POST /api/v1/tools/{name}/execute
+ */
+export async function executeTool(
+  toolName: string,
+  args: Record<string, any>,
+  callerContext?: Record<string, any>
+): Promise<ToolResult> {
+  const payload = {
+    arguments: args,
+    caller_context: callerContext || {},
+  }
+  return apiClient.post<ToolResult>(`/api/v1/tools/${toolName}/execute`, payload)
+}
+
+/**
+ * Stream tool output chunks via SSE POST /api/v1/tools/{name}/execute/stream
+ */
+export async function streamTool(
+  toolName: string,
+  args: Record<string, any>,
+  onChunk: (chunk: string) => void,
+  onError: (err: string) => void,
+  onComplete: () => void
+): Promise<void> {
+  const token = localStorage.getItem("jarvis_access_token")
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Accept": "text/event-stream",
+  }
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
+
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/api/v1/tools/${toolName}/execute/stream`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ arguments: args }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Streaming failed with status ${response.status}: ${response.statusText}`)
+    }
+
+    const reader = response.body?.getReader()
+    if (!reader) {
+      throw new Error("ReadableStream not supported by response body.")
+    }
+
+    const decoder = new TextDecoder()
+    let buffer = ""
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split("\n\n")
+      buffer = lines.pop() || ""
+
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const rawData = line.slice(6).trim()
+          if (rawData === "[DONE]") {
+            onComplete()
+            return
+          }
+          try {
+            const parsed = JSON.parse(rawData)
+            if (parsed.chunk !== undefined) {
+              onChunk(String(parsed.chunk))
+            } else if (parsed.error) {
+              onError(parsed.error)
+            }
+          } catch {
+            onChunk(rawData)
+          }
+        }
+      }
+    }
+    onComplete()
+  } catch (err: any) {
+    onError(err?.message || "An error occurred during tool streaming.")
+  }
+}
+
+/**
  * React Query Hook for discovery tool list
  */
 export function useToolsQuery(category?: string | null, tag?: string | null, query?: string) {
   return useQuery({
     queryKey: ["tools", category, tag, query],
     queryFn: () => fetchTools(category, tag, query),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -48,7 +135,7 @@ export function useCategoriesQuery() {
   return useQuery({
     queryKey: ["tool-categories"],
     queryFn: fetchCategories,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000,
   })
 }
 
