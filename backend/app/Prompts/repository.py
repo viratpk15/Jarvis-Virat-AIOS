@@ -2,8 +2,8 @@
 Jarvis AIOS — Prompt Studio Repository Layer
 """
 
-from typing import List, Optional, Dict, Any
-from datetime import datetime
+from typing import List, Optional, Dict
+from datetime import datetime, timezone
 from app.Prompts.models import (
     Prompt,
     PromptVersion,
@@ -37,10 +37,14 @@ class PromptRepository:
                 id="tmpl_sql",
                 name="SQL Query Generator",
                 category="SQL",
-                description="Generates optimized PostgreSQL queries from natural language specifications.",
-                system_prompt="You are an expert database administrator and SQL developer. Always return valid, benchmarked SQL queries.",
-                user_prompt="Write a SQL query to retrieve {{metrics}} for table {{table_name}} filtered by {{date_range}}.",
-                default_variables={"metrics": "count(*)", "table_name": "users", "date_range": "last_30_days"},
+                description="Generates optimized PostgreSQL queries from natural language specs.",
+                system_prompt="You are an expert database administrator and SQL developer.",
+                user_prompt="Write a SQL query to retrieve {{metrics}} from {{table_name}} filtered by {{date_range}}.",
+                default_variables={
+                    "metrics": "count(*)",
+                    "table_name": "users",
+                    "date_range": "last_30_days",
+                },
             ),
             PromptTemplate(
                 id="tmpl_rag",
@@ -49,7 +53,10 @@ class PromptRepository:
                 description="Synthesizes vector search context into grounded responses.",
                 system_prompt="You are a RAG answer engine. Answer strictly using the provided context snippets.",
                 user_prompt="Context:\n{{context}}\n\nQuestion: {{question}}",
-                default_variables={"context": "Jarvis AIOS v1.0 released in 2026.", "question": "When was Jarvis v1.0 released?"},
+                default_variables={
+                    "context": "Jarvis AIOS v1.0 released in 2026.",
+                    "question": "When was Jarvis v1.0 released?",
+                },
             ),
             PromptTemplate(
                 id="tmpl_code_review",
@@ -58,7 +65,10 @@ class PromptRepository:
                 description="Audits Python and TypeScript code snippets for security vulnerabilities.",
                 system_prompt="You are a principal security engineer. Inspect the code for SQL injection, XSS, and authorization flaws.",
                 user_prompt="Audit the following {{language}} code:\n```\n{{code_snippet}}\n```",
-                default_variables={"language": "Python", "code_snippet": "def login(user):\n    pass"},
+                default_variables={
+                    "language": "Python",
+                    "code_snippet": "def login(user):\n    pass",
+                },
             ),
             PromptTemplate(
                 id="tmpl_summarize",
@@ -74,7 +84,7 @@ class PromptRepository:
             self._templates[tmpl.id] = tmpl
 
     def save_prompt(self, prompt: Prompt) -> Prompt:
-        prompt.updated_at = datetime.utcnow()
+        prompt.updated_at = datetime.now(timezone.utc)
         self._prompts[prompt.id] = prompt
         return prompt
 

@@ -46,7 +46,7 @@ export function VersionDiffViewer() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Commit List Timeline (Left Column) */}
-          <div className="lg:col-span-4 space-y-2 max-h-[400px] overflow-y-auto scrollbar-thin">
+          <div className="lg:col-span-4 space-y-2 max-h-100 overflow-y-auto scrollbar-thin">
             {versions.map((ver, idx) => {
               const isHead = idx === 0
               const isSelected = targetVer?.id === ver.id
@@ -106,14 +106,14 @@ export function VersionDiffViewer() {
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <span className="text-[10px] text-muted-foreground uppercase">Active Head ({currentHead?.version_tag})</span>
-                <div className="p-3 bg-[#0D1117] border border-border/40 rounded-lg text-[#C9D1D9] text-[11px] whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto scrollbar-thin">
+                <div className="p-3 bg-[#0D1117] border border-border/40 rounded-lg text-[#C9D1D9] text-[11px] whitespace-pre-wrap leading-relaxed max-h-75 overflow-y-auto scrollbar-thin">
                   {currentHead?.user_prompt}
                 </div>
               </div>
 
               <div className="space-y-1">
                 <span className="text-[10px] text-cyan-400 uppercase">Target Commit ({targetVer?.version_tag})</span>
-                <div className="p-3 bg-[#0D1117] border border-cyan-500/30 rounded-lg text-[#C9D1D9] text-[11px] whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto scrollbar-thin">
+                <div className="p-3 bg-[#0D1117] border border-cyan-500/30 rounded-lg text-[#C9D1D9] text-[11px] whitespace-pre-wrap leading-relaxed max-h-75 overflow-y-auto scrollbar-thin">
                   {targetVer?.user_prompt}
                 </div>
               </div>

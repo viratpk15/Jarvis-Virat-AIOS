@@ -95,7 +95,7 @@ class LocalEmbeddingProvider(BaseEmbeddingProvider):
 
         # Generate embedding
         embedding = self._model.encode(text, convert_to_numpy=False)
-        
+
         # Convert to list of floats
         return embedding.tolist()
 

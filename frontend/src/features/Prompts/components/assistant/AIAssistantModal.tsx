@@ -75,7 +75,7 @@ export function AIAssistantModal() {
 
         <div className="space-y-2">
           <span className="text-[10px] text-muted-foreground uppercase">Original Draft</span>
-          <div className="p-2.5 bg-[#0D1117] border border-border/40 rounded-lg text-muted-foreground text-[11px] whitespace-pre-wrap max-h-[120px] overflow-y-auto scrollbar-thin">
+          <div className="p-2.5 bg-[#0D1117] border border-border/40 rounded-lg text-muted-foreground text-[11px] whitespace-pre-wrap max-h-30 overflow-y-auto scrollbar-thin">
             {userPromptDraft}
           </div>
         </div>
@@ -83,7 +83,7 @@ export function AIAssistantModal() {
         {suggestedText && (
           <div className="space-y-2">
             <span className="text-[10px] text-violet-400 uppercase font-bold">AI Proposed Optimization (Requires Human Approval)</span>
-            <div className="p-3 bg-[#0D1117] border border-violet-500/40 rounded-lg text-foreground text-[11px] whitespace-pre-wrap leading-relaxed max-h-[180px] overflow-y-auto scrollbar-thin">
+            <div className="p-3 bg-[#0D1117] border border-violet-500/40 rounded-lg text-foreground text-[11px] whitespace-pre-wrap leading-relaxed max-h-45 overflow-y-auto scrollbar-thin">
               {suggestedText}
             </div>
 

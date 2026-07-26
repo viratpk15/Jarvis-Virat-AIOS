@@ -58,7 +58,7 @@ export function VariablesPanel() {
           </span>
           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
         </div>
-        <div className="p-3 bg-[#0D1117] border border-border/40 rounded-lg text-xs font-mono text-[#C9D1D9] whitespace-pre-wrap leading-relaxed max-h-[180px] overflow-y-auto scrollbar-thin">
+        <div className="p-3 bg-[#0D1117] border border-border/40 rounded-lg text-xs font-mono text-[#C9D1D9] whitespace-pre-wrap leading-relaxed max-h-45 overflow-y-auto scrollbar-thin">
           {previewText || "Prompt preview will appear here..."}
         </div>
       </div>

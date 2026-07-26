@@ -70,7 +70,7 @@ export function PromptLibrary() {
           No prompts matched search.
         </div>
       ) : (
-        <div className="space-y-2 max-h-[500px] overflow-y-auto scrollbar-thin">
+        <div className="space-y-2 max-h-125 overflow-y-auto scrollbar-thin">
           {prompts.map((p) => {
             const isSelected = selectedPromptId === p.id
             return (

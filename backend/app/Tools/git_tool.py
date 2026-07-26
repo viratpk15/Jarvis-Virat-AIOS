@@ -68,7 +68,7 @@ class GitTool(Tool):
         if action_lower not in READ_ONLY_ACTIONS and action_lower not in WRITE_ACTIONS:
             raise ValueError(
                 f"Unsupported git action '{action}'. "
-                f"Supported: {sorted(list(READ_ONLY_ACTIONS | WRITE_ACTIONS))}"
+                f"Supported: {sorted(READ_ONLY_ACTIONS | WRITE_ACTIONS)}"
             )
 
         cmd = ["git", action_lower]

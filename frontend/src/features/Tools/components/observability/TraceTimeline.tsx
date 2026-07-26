@@ -59,7 +59,7 @@ export function TraceTimeline({ result }: TraceTimelineProps) {
         <span className="text-[10px] text-muted-foreground">Trace ID: {result.execution_id}</span>
       </div>
 
-      <div className="relative pl-4 space-y-3 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-border/50">
+      <div className="relative pl-4 space-y-3 before:absolute before:left-1.75 before:top-2 before:bottom-2 before:w-0.5 before:bg-border/50">
         {stages.map((stage) => (
           <div key={stage.id} className="relative flex items-start gap-2.5 group">
             <div className="absolute -left-4 top-0.5 p-1 bg-[#121826] border border-border/60 rounded-full">

@@ -2,7 +2,7 @@
 Jarvis AIOS — FastAPI RAG Studio Router (/api/v1/rag/*)
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Query, File, UploadFile, Form
+from fastapi import APIRouter, Depends, Form
 from fastapi.responses import StreamingResponse
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel

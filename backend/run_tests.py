@@ -12,21 +12,11 @@ def load_module_from_path(module_name, file_path):
     mod = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = mod
     spec.loader.exec_module(mod)
-    return mod
-
-
-# Load modules explicitly without triggering app.__init__
-load_module_from_path("app.RAG.models", os.path.join(backend_dir, "app/RAG/models.py"))
-load_module_from_path("app.RAG.repository", os.path.join(backend_dir, "app/RAG/repository.py"))
-load_module_from_path("app.RAG.rag_manager", os.path.join(backend_dir, "app/RAG/rag_manager.py"))
-load_module_from_path("app.FastAPI.routes_rag", os.path.join(backend_dir, "app/FastAPI/routes_rag.py"))
-load_module_from_path("app.main", os.path.join(backend_dir, "app/main.py"))
-
+# Import modules after path setup
 from app.RAG.repository import RAGRepository
 from app.RAG.rag_manager import RAGManager
 from app.main import app
 from fastapi.testclient import TestClient
-
 import unittest
 
 

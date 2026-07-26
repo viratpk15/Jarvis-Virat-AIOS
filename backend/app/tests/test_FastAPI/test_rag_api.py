@@ -2,7 +2,6 @@
 Integration Tests for FastAPI RAG Studio Endpoints (/api/v1/rag/*)
 """
 
-import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 

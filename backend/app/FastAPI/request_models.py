@@ -72,7 +72,7 @@ class ConversationCreateRequest(BaseModel):
 class ConversationRenameRequest(BaseModel):
     """Request model for renaming an existing conversation."""
     title: str = Field(
-        ..., 
+        ...,
         description="New title for the conversation.",
         max_length=255,
     )
@@ -80,6 +80,6 @@ class ConversationRenameRequest(BaseModel):
 class ConversationPinRequest(BaseModel):
     """Request model for pinning or unpinning a conversation."""
     pinned: bool = Field(
-        ..., 
+        ...,
         description="Pin status to set for the conversation.",
     )

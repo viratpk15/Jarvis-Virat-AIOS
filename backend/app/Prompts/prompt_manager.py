@@ -5,13 +5,11 @@ Jarvis AIOS — Prompt Studio Core Manager Service
 import re
 import time
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any, AsyncGenerator
 from app.Prompts.models import (
     Prompt,
     PromptVersion,
-    PromptFolder,
-    PromptTemplate,
     PromptExecution,
     PromptEvaluation,
 )
@@ -96,8 +94,16 @@ class PromptManager:
         if not prompt:
             return None
         versions = self.repo.get_versions(prompt_id)
-        current_version = self.repo.get_version(prompt_id, prompt.current_version_id) if prompt.current_version_id else (versions[0] if versions else None)
-        variables = self.extract_variables((current_version.user_prompt if current_version else "") + " " + (current_version.system_prompt if current_version else ""))
+        current_version = (
+            self.repo.get_version(prompt_id, prompt.current_version_id)
+            if prompt.current_version_id
+            else (versions[0] if versions else None)
+        )
+        variables = self.extract_variables(
+            (current_version.user_prompt if current_version else "")
+            + " "
+            + (current_version.system_prompt if current_version else "")
+        )
 
         return {
             "prompt": prompt,
@@ -174,7 +180,12 @@ class PromptManager:
             interpolated_user = interpolated_user.replace(f"{{{{ {var_k} }}}}", str(var_v))
 
         # Simulated AI Model Completion output for Playground testing
-        simulated_output = f"[{model.upper()} Output]\nExecuted request with system guidelines:\n'{system_prompt[:60]}...'\n\nResult for '{interpolated_user[:100]}':\nGenerated synthetic completion payload successfully."
+        simulated_output = (
+            f"[{model.upper()} Output]\n"
+            f"Executed request with system guidelines:\n'{system_prompt[:60]}...'\n\n"
+            f"Result for '{interpolated_user[:100]}':\n"
+            f"Generated synthetic completion payload successfully."
+        )
 
         duration_ms = (time.time() - start_time) * 1000 + 120.0
         prompt_tokens = len(system_prompt.split()) + len(user_prompt.split()) + 15
@@ -237,7 +248,7 @@ class PromptManager:
             evaluator_type=evaluator_type,
             detailed_feedback={
                 "summary": "High alignment with prompt guidelines. 0 hallucination detected.",
-                "verified_at": datetime.utcnow().isoformat(),
+                "verified_at": datetime.now(timezone.utc).isoformat(),
             },
         )
         return self.repo.save_evaluation(evaluation)

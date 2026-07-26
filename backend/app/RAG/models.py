@@ -2,8 +2,8 @@
 Jarvis AIOS — RAG Studio Database Models (Pydantic 2.x & SQLModel compatible)
 """
 
-from datetime import datetime
-from typing import Optional, List, Dict, Any
+from datetime import datetime, timezone
+from typing import List, Dict, Any
 from pydantic import BaseModel, Field
 import uuid
 
@@ -12,12 +12,16 @@ def generate_uuid() -> str:
     return str(uuid.uuid4())
 
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 class KnowledgeBase(BaseModel):
     id: str = Field(default_factory=generate_uuid)
     name: str
     description: str = ""
     default_embedding_model: str = "text-embedding-3-small"
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
 
 class Dataset(BaseModel):
@@ -25,7 +29,7 @@ class Dataset(BaseModel):
     kb_id: str
     name: str
     document_count: int = 0
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
 
 class Document(BaseModel):
@@ -35,7 +39,7 @@ class Document(BaseModel):
     file_type: str = "txt"  # txt, md, pdf, json, py
     file_size_bytes: int = 0
     storage_path: str = ""
-    ingested_at: datetime = Field(default_factory=datetime.utcnow)
+    ingested_at: datetime = Field(default_factory=utc_now)
 
 
 class Chunk(BaseModel):
@@ -71,7 +75,7 @@ class RetrievalTrace(BaseModel):
     alpha_used: float = 0.50
     top_k_requested: int = 5
     latency_ms: float = 0.0
-    executed_at: datetime = Field(default_factory=datetime.utcnow)
+    executed_at: datetime = Field(default_factory=utc_now)
 
 
 class RAGEvaluation(BaseModel):
@@ -83,7 +87,7 @@ class RAGEvaluation(BaseModel):
     answer_relevance: float = 0.95
     mrr: float = 0.89
     ndcg: float = 0.92
-    evaluated_at: datetime = Field(default_factory=datetime.utcnow)
+    evaluated_at: datetime = Field(default_factory=utc_now)
 
 
 class KnowledgeGraphData(BaseModel):

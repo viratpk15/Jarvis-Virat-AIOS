@@ -86,7 +86,7 @@ export function PromptComparisonGrid() {
                   </span>
                 </div>
 
-                <div className="p-2.5 bg-secondary/10 rounded border border-border/30 text-[#C9D1D9] text-[11px] whitespace-pre-wrap leading-relaxed max-h-[200px] overflow-y-auto scrollbar-thin">
+                <div className="p-2.5 bg-secondary/10 rounded border border-border/30 text-[#C9D1D9] text-[11px] whitespace-pre-wrap leading-relaxed max-h-50 overflow-y-auto scrollbar-thin">
                   {c.raw_output}
                 </div>
 

@@ -167,7 +167,7 @@ export function MultiModelPlayground() {
                 </span>
               </div>
 
-              <div className="p-2 bg-secondary/20 rounded border border-border/30 text-[#C9D1D9] text-[11px] whitespace-pre-wrap leading-relaxed max-h-[220px] overflow-y-auto scrollbar-thin">
+              <div className="p-2 bg-secondary/20 rounded border border-border/30 text-[#C9D1D9] text-[11px] whitespace-pre-wrap leading-relaxed max-h-55 overflow-y-auto scrollbar-thin">
                 {res.raw_output}
               </div>
             </div>

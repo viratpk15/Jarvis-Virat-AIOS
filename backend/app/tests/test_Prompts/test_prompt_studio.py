@@ -4,7 +4,6 @@ Jarvis AIOS — Prompt Studio Unit Tests
 
 import pytest
 from app.Prompts.prompt_manager import PromptManager
-from app.Prompts.models import Prompt, PromptVersion, PromptFolder, PromptTemplate
 
 
 @pytest.fixture

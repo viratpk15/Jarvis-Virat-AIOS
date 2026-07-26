@@ -91,7 +91,7 @@ class TerminalTool(Tool):
         if binary not in self.allowlist:
             raise ValueError(
                 f"Security error: Binary '{binary}' is not in the allowed command list. "
-                f"Allowed commands: {sorted(list(self.allowlist))}"
+                f"Allowed commands: {sorted(self.allowlist)}"
             )
 
         return tokens

@@ -2,16 +2,13 @@
 Jarvis AIOS — RAG Manager Service Layer
 """
 
-import math
 import time
-from typing import List, Dict, Any, AsyncGenerator
-from datetime import datetime
+from typing import List, Dict, Any, AsyncGenerator, Optional
 
 from app.RAG.models import (
     KnowledgeBase,
     Dataset,
     Document,
-    Chunk,
     RetrievalTrace,
     RAGEvaluation,
     KnowledgeGraphData,
@@ -45,7 +42,7 @@ class RAGManager:
         words = text.split()
         chunks = []
         step = max(1, chunk_size - overlap)
-        
+
         for idx, i in enumerate(range(0, len(words), step)):
             chunk_words = words[i:i + chunk_size]
             if not chunk_words:
@@ -131,7 +128,7 @@ class RAGManager:
     def generate_grounded_answer(self, query: str, chunks: List[Dict[str, Any]]) -> Dict[str, Any]:
         context_text = "\n---\n".join([c.get("raw_text", "") for c in chunks])
         answer = f"Based on retrieved architectural context:\n{context_text[:300]}...\nJarvis AIOS ensures hybrid dense+sparse vector search with sub-10ms latency."
-        
+
         return {
             "query": query,
             "context_length": len(context_text),
@@ -144,9 +141,9 @@ class RAGManager:
     async def stream_rag_answer(self, query: str) -> AsyncGenerator[str, None]:
         search_res = self.hybrid_search(query=query, top_k=3)
         chunks = search_res["results"]
-        
+
         yield f"event: retrieval\ndata: {{\x22retrieved_chunks\x22: {len(chunks)}, \x22latency_ms\x22: {search_res['latency_ms']}}}\n\n"
-        
+
         lines = [
             "Jarvis AIOS RAG Engine initialized.",
             f"Query: '{query}'",
@@ -155,7 +152,7 @@ class RAGManager:
             "Synthesizing grounded answer with full citation attribution.",
             "RAG execution complete."
         ]
-        
+
         for line in lines:
             yield f"data: {{\x22chunk\x22: \x22{line}\n\x22}}\n\n"
 
@@ -175,7 +172,7 @@ class RAGManager:
     def get_analytics(self) -> Dict[str, Any]:
         traces = self.repo.list_traces()
         evals = self.repo.list_evaluations()
-        
+
         avg_latency = sum(t.latency_ms for t in traces) / max(1, len(traces)) if traces else 14.5
         avg_faithfulness = sum(e.faithfulness for e in evals) / max(1, len(evals)) if evals else 0.98
 

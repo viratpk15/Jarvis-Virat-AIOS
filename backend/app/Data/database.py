@@ -72,7 +72,7 @@ def check_db_connection() -> dict[str, str | None]:
         with engine.connect() as conn:
             result = conn.execute(text("SELECT 1"))
             result.fetchone()
-            
+
             # Fetch server version
             version_str = "unknown"
             try:

@@ -50,10 +50,20 @@ class SessionModel(Base):
 
     # Relationships
     user = relationship("UserModel", back_populates="sessions")
-    messages = relationship("MessageModel", back_populates="session", cascade="all, delete-orphan")
-    message_embeddings = relationship("MessageEmbeddingModel", back_populates="session", cascade="all, delete-orphan")
-    summary_embedding = relationship("SummaryEmbeddingModel", back_populates="session", uselist=False, cascade="all, delete-orphan")
-    execution_state = relationship("ExecutionStateModel", back_populates="session", uselist=False, cascade="all, delete-orphan")
+    messages = relationship(
+        "MessageModel", back_populates="session", cascade="all, delete-orphan"
+    )
+    message_embeddings = relationship(
+        "MessageEmbeddingModel", back_populates="session", cascade="all, delete-orphan"
+    )
+    summary_embedding = relationship(
+        "SummaryEmbeddingModel", back_populates="session", uselist=False,
+        cascade="all, delete-orphan",
+    )
+    execution_state = relationship(
+        "ExecutionStateModel", back_populates="session", uselist=False,
+        cascade="all, delete-orphan",
+    )
 
 
 class MessageModel(Base):

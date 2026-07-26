@@ -47,7 +47,7 @@ export function ExecutionHistory() {
           No tool executions recorded in this session yet.
         </div>
       ) : (
-        <div className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-thin">
+        <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin">
           {executionHistory.map((item, idx) => {
             const isSuccess = item.status === "SUCCESS"
             return (

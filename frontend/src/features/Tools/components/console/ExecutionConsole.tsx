@@ -54,7 +54,7 @@ export function ExecutionConsole() {
   }
 
   return (
-    <div className="bg-[#090D16] border border-border/40 rounded-xl overflow-hidden font-mono flex flex-col h-[400px]">
+    <div className="bg-[#090D16] border border-border/40 rounded-xl overflow-hidden font-mono flex flex-col h-100">
       {/* Console Header Toolbar */}
       <div className="h-10 px-3 bg-[#121826]/90 border-b border-border/40 flex items-center justify-between text-xs text-muted-foreground select-none">
         <div className="flex items-center gap-2">

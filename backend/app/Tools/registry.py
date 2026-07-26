@@ -131,7 +131,7 @@ class ToolRegistry:
     def categories(self) -> List[str]:
         """Return sorted list of unique tool categories."""
         cats = {tool.metadata.category for tool in self._tools.values()}
-        return sorted(list(cats))
+        return sorted(cats)
 
     def schemas(self, names: Optional[List[str]] = None) -> List[Dict[str, Any]]:
         """

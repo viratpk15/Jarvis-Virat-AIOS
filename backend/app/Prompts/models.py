@@ -2,7 +2,7 @@
 Jarvis AIOS — Prompt Studio Data Models (Pydantic 2.x & SQLAlchemy compatible)
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 import uuid
@@ -12,11 +12,15 @@ def generate_uuid() -> str:
     return str(uuid.uuid4())
 
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 class PromptFolder(BaseModel):
     id: str = Field(default_factory=generate_uuid)
     name: str
     parent_id: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
 
 class PromptTag(BaseModel):
@@ -34,8 +38,8 @@ class Prompt(BaseModel):
     is_favorite: bool = False
     is_archived: bool = False
     tags: List[str] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
 
 class PromptVersion(BaseModel):
@@ -50,7 +54,7 @@ class PromptVersion(BaseModel):
     top_p: float = 0.95
     max_tokens: int = 2048
     author: str = "System"
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
 
 class PromptVariable(BaseModel):
@@ -74,7 +78,7 @@ class PromptExecution(BaseModel):
     completion_tokens: int = 0
     total_cost: float = 0.0
     status: str = "SUCCESS"
-    executed_at: datetime = Field(default_factory=datetime.utcnow)
+    executed_at: datetime = Field(default_factory=utc_now)
 
 
 class PromptEvaluation(BaseModel):
@@ -87,7 +91,7 @@ class PromptEvaluation(BaseModel):
     relevance_score: float = 10.0
     evaluator_type: str = "AI_AUTOMATED"
     detailed_feedback: Dict[str, Any] = Field(default_factory=dict)
-    evaluated_at: datetime = Field(default_factory=datetime.utcnow)
+    evaluated_at: datetime = Field(default_factory=utc_now)
 
 
 class PromptTemplate(BaseModel):

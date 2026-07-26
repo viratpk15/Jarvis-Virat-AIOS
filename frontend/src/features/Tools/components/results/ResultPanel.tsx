@@ -71,7 +71,7 @@ export function ResultPanel({ result }: ResultPanelProps) {
           {typeof result.output === "object" ? (
             <JsonViewer data={result.output} title="Output Object" defaultExpanded={true} />
           ) : (
-            <div className="p-3 bg-[#0D1117] border border-border/40 rounded-lg text-xs font-mono text-[#C9D1D9] whitespace-pre-wrap break-all max-h-[250px] overflow-y-auto scrollbar-thin">
+            <div className="p-3 bg-[#0D1117] border border-border/40 rounded-lg text-xs font-mono text-[#C9D1D9] whitespace-pre-wrap break-all max-h-62.5 overflow-y-auto scrollbar-thin">
               {String(result.output)}
             </div>
           )}

@@ -2,8 +2,7 @@
 Jarvis AIOS — RAG Studio Repository Layer
 """
 
-from typing import List, Optional, Dict, Any
-from datetime import datetime
+from typing import List, Optional, Dict
 from app.RAG.models import (
     KnowledgeBase,
     Dataset,
@@ -126,7 +125,7 @@ class RAGRepository:
             file_size_bytes=len(raw_text.encode("utf-8")),
         )
         self._documents[doc.id] = doc
-        
+
         # Simple auto-chunking
         words = raw_text.split()
         chunk_size = 50

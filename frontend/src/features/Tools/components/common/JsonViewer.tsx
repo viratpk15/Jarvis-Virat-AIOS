@@ -52,7 +52,7 @@ export function JsonViewer({ data, title, defaultExpanded = true }: JsonViewerPr
       )}
 
       {isExpanded && (
-        <div className="p-3 overflow-x-auto text-[#C9D1D9] leading-relaxed max-h-[350px] scrollbar-thin">
+        <div className="p-3 overflow-x-auto text-[#C9D1D9] leading-relaxed max-h-87.5 scrollbar-thin">
           <pre className="whitespace-pre-wrap break-all">{jsonString}</pre>
         </div>
       )}

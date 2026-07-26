@@ -87,7 +87,7 @@ async def execute_tool(
 ) -> ToolResult:
     tool_args = payload.get("arguments", payload)
     caller_ctx = payload.get("caller_context", {})
-    
+
     # Inject current user ID and role into context
     caller_ctx.setdefault("user_id", current_user.id)
     caller_ctx.setdefault("role", getattr(current_user, "role", "USER"))
