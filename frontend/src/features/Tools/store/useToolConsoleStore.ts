@@ -1,7 +1,7 @@
 import { create } from "zustand"
 import type { ToolResult, ConsoleLogEntry, PendingApprovalItem } from "../types/tools.types"
 
-export type StudioTab = "explorer" | "runner" | "console" | "history" | "approvals"
+export type StudioTab = "explorer" | "runner" | "console" | "history" | "approvals" | "metrics"
 
 interface ToolConsoleState {
   selectedToolName: string | null

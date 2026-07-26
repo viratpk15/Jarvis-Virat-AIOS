@@ -1,4 +1,4 @@
-import { Play, Terminal, History, AlertTriangle } from "lucide-react"
+import { Play, Terminal, History, AlertTriangle, Activity } from "lucide-react"
 import { WorkspaceShell } from "./components/shell/WorkspaceShell"
 import { ToolExplorer } from "./components/explorer/ToolExplorer"
 import { ToolInspector } from "./components/inspector/ToolInspector"
@@ -6,6 +6,7 @@ import { ToolRunner } from "./components/runner/ToolRunner"
 import { ExecutionConsole } from "./components/console/ExecutionConsole"
 import { ExecutionHistory } from "./components/history/ExecutionHistory"
 import { ApprovalQueue } from "./components/approvals/ApprovalQueue"
+import { ObservabilityPanel } from "./components/observability/ObservabilityPanel"
 import { useToolConsoleStore } from "./store/useToolConsoleStore"
 
 export default function ToolsPage() {
@@ -17,7 +18,7 @@ export default function ToolsPage() {
   return (
     <WorkspaceShell
       title="Tool Console"
-      subtitle="Interactive Native Tool Runner, SSE Streaming Terminal & Approval Manager"
+      subtitle="Interactive Tool Runner, Live SSE Console & Real-Time Observability Analytics"
     >
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full items-start">
         {/* Left Column: Tool Explorer */}
@@ -25,7 +26,7 @@ export default function ToolsPage() {
           <ToolExplorer />
         </div>
 
-        {/* Center Main Stage Column: Dynamic Runner, Console, History, Approvals */}
+        {/* Center Main Stage Column: Dynamic Runner, Console, History, Approvals, Observability */}
         <div className="lg:col-span-8 xl:col-span-6 space-y-4">
           {/* Navigation Tab Bar */}
           <div className="flex items-center gap-1.5 p-1 bg-secondary/20 border border-border/40 rounded-xl overflow-x-auto">
@@ -81,6 +82,18 @@ export default function ToolsPage() {
                 </span>
               )}
             </button>
+
+            <button
+              onClick={() => setActiveTab("metrics")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                activeTab === "metrics"
+                  ? "bg-violet-500/20 text-violet-300 border border-violet-500/40 shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+              }`}
+            >
+              <Activity className="h-3.5 w-3.5 text-violet-400" />
+              Observability
+            </button>
           </div>
 
           {/* Active Tab Content View */}
@@ -88,6 +101,7 @@ export default function ToolsPage() {
           {activeTab === "console" && <ExecutionConsole />}
           {activeTab === "history" && <ExecutionHistory />}
           {activeTab === "approvals" && <ApprovalQueue />}
+          {activeTab === "metrics" && <ObservabilityPanel />}
         </div>
 
         {/* Right Column: Tool Inspector */}
