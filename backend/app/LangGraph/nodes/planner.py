@@ -30,16 +30,22 @@ MAX_PLAN_STEPS = 10
 # Number of validation retries permitted before a plan is rejected.
 MAX_VALIDATION_RETRIES: int = 1
 
-# System prompt for the planner
-PLANNER_PROMPT = """You are a planning assistant for Jarvis AIOS.
+def _build_planner_prompt() -> str:
+    """Dynamically construct planner system prompt from registered tools in ToolRegistry."""
+    from app.Tools.registry import registry
+    registered_tools = registry.discover()
+    tool_lines = []
+    for meta in registered_tools:
+        appr = " (Requires Approval)" if meta.requires_approval else ""
+        tool_lines.append(f"- {meta.name}: {meta.description} [Category: {meta.category}]{appr}")
+    tools_str = "\n".join(tool_lines) if tool_lines else "- None registered"
+
+    return f"""You are a planning assistant for Jarvis AIOS.
 
 Your job is to create a structured plan to achieve the user's goal.
 
 Available tools:
-- calculator: Evaluate mathematical expressions
-- datetime: Get current date and time
-- file_reader: Read file contents
-- python: Execute Python code
+{tools_str}
 
 Rules:
 
@@ -60,54 +66,24 @@ Rules:
 
 7. Return ONLY valid JSON in this exact format:
 
-{
+{{
     "goal": "High-level goal description",
     "steps": [
-        {
+        {{
             "id": 1,
             "description": "Step description",
             "tool": "tool_name_or_empty_string",
             "status": "pending"
-        }
+        }}
     ]
-}
-
-Example - Conversational plan:
-{
-    "goal": "Answer user's question about Python",
-    "steps": [
-        {
-            "id": 1,
-            "description": "Provide explanation about Python",
-            "tool": "",
-            "status": "pending"
-        }
-    ]
-}
-
-Example - Multi-step plan:
-{
-    "goal": "Calculate total cost and save to file",
-    "steps": [
-        {
-            "id": 1,
-            "description": "Calculate total using calculator",
-            "tool": "calculator",
-            "status": "pending"
-        },
-        {
-            "id": 2,
-            "description": "Save result to file",
-            "tool": "file_reader",
-            "status": "pending"
-        }
-    ]
-}
+}}
 
 Never explain.
-Never use markdown.
+Never use markdown formatting.
 Return JSON only.
 """
+
+PLANNER_PROMPT = _build_planner_prompt()
 
 
 def _build_plan_from_llm(raw_content: str) -> dict[str, Any]:
@@ -369,7 +345,7 @@ def planner(state: State):
 
     # Call LLM to generate or replan
     messages = [
-        SystemMessage(content=PLANNER_PROMPT),
+        SystemMessage(content=_build_planner_prompt()),
         HumanMessage(content=planner_input),
     ]
 

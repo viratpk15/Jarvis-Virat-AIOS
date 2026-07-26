@@ -60,3 +60,12 @@ class State(TypedDict):
 
     # Final classified termination outcome (None while executing).
     termination_reason: ExecutionOutcome | None
+
+    # --- Tool Engine & Execution tracking fields (Sprint 6.1C) ---
+    executed_tools: list[str]
+    tool_results: list[dict[str, Any]]
+    pending_approvals: list[dict[str, Any]]
+    execution_history: list[dict[str, Any]]
+    active_tool: str | None
+    tool_call_depth: int
+    tool_execution_count: int
