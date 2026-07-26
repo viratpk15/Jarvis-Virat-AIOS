@@ -221,9 +221,31 @@ def _run_with_timeout(code: str, timeout: float) -> str:
 
 
 class PythonRunnerTool(Tool):
-    name = "python"
-
-    description = "Executes Python code."
+    def __init__(self) -> None:
+        from app.Tools.metadata import ToolMetadata, PermissionLevel
+        meta = ToolMetadata(
+            name="python",
+            display_name="Python Code Sandbox",
+            description="Executes Python code in a restricted sandbox environment.",
+            category="development",
+            tags=["python", "code", "sandbox", "execution"],
+            version="1.0.0",
+            author="Jarvis AIOS Core",
+            permission_level=PermissionLevel.USER,
+            requires_approval=False,
+            timeout_seconds=5.0,
+            parameter_schema={
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": "Python code snippet to execute.",
+                    },
+                },
+                "required": ["code"],
+            },
+        )
+        super().__init__(metadata=meta)
 
     def execute(self, **kwargs: Any) -> Any:
         """Execute Python code in a restricted sandbox.

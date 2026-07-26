@@ -15,6 +15,11 @@ from app.Tools.calculator import CalculatorTool
 from app.Tools.datetime_tool import DateTimeTool
 from app.Tools.file_reader import FileReaderTool
 from app.Tools.python_runner import PythonRunnerTool
+from app.Tools.filesystem_tool import FilesystemTool
+from app.Tools.terminal_tool import TerminalTool
+from app.Tools.git_tool import GitTool
+from app.Tools.web_search_tool import WebSearchTool
+from app.Tools.browser_tool import BrowserTool
 
 
 class ToolRegistry:
@@ -31,6 +36,11 @@ class ToolRegistry:
         self.register(DateTimeTool())
         self.register(FileReaderTool())
         self.register(PythonRunnerTool())
+        self.register(FilesystemTool())
+        self.register(TerminalTool())
+        self.register(GitTool())
+        self.register(WebSearchTool())
+        self.register(BrowserTool())
 
     def register(self, tool: Tool) -> None:
         """Register a tool instance."""

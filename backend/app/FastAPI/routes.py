@@ -35,6 +35,10 @@ router = APIRouter()
 from app.FastAPI.routes_conversations import router as conversations_router  # noqa: E402
 router.include_router(conversations_router)
 
+# Include tools engine routes
+from app.FastAPI.routes_tools import router as tools_router  # noqa: E402
+router.include_router(tools_router, prefix="/api/v1")
+
 
 @router.get(
     "/health",
