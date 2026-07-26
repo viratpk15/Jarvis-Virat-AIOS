@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Save, Shield, Settings2, Palette, Check, Moon, Sun, Sparkles } from "lucide-react"
-import { useTheme, type Theme } from "@/providers/ThemeProvider"
+import { useTheme, type Theme } from "@/providers/useTheme"
 import { cn } from "@/lib/utils"
 
 export default function SettingsPage() {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Play, Zap, RotateCcw, Copy, Check } from "lucide-react"
 import type { ToolMetadata } from "../../types/tools.types"
 import { ParameterField } from "./ParameterField"
@@ -27,7 +27,7 @@ export function DynamicForm({
   const [copied, setCopied] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const properties: Record<string, any> = schema?.properties || metadata.parameter_schema?.properties || {}
+  const properties: Record<string, any> = useMemo(() => schema?.properties || metadata.parameter_schema?.properties || {}, [schema, metadata.parameter_schema])
   const requiredFields: string[] = schema?.required || metadata.parameter_schema?.required || []
 
   // Set default values when tool changes
@@ -43,7 +43,7 @@ export function DynamicForm({
     if (Object.keys(defaults).length > 0 && Object.keys(formValues).length === 0) {
       onValuesChange(defaults)
     }
-  }, [metadata.name])
+  }, [metadata.name, properties, formValues, onValuesChange])
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {}

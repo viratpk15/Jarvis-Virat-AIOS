@@ -22,7 +22,7 @@ export function MonacoPromptEditor() {
     if (details?.current_version) {
       setDraftContent(details.current_version.system_prompt, details.current_version.user_prompt)
     }
-  }, [details])
+  }, [details, setDraftContent])
 
   // Extract variables on prompt edit
   useEffect(() => {
@@ -32,7 +32,7 @@ export function MonacoPromptEditor() {
         updateVariableValue(v, "")
       })
     })
-  }, [systemPromptDraft, userPromptDraft])
+  }, [systemPromptDraft, userPromptDraft, updateVariableValue])
 
   const totalTokens = (systemPromptDraft.split(/\s+/).length + userPromptDraft.split(/\s+/).length) * 1.3
   const estimatedCost = (totalTokens * 0.00001).toFixed(4)
