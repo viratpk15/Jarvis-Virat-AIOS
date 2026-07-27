@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { apiClient } from "@/services/api/apiClient"
+import { queryKeys } from "@/services/queries/queryKeys"
 import type {
   KnowledgeBase,
   Dataset,
@@ -60,52 +61,52 @@ export async function fetchEvaluations(): Promise<RAGEvaluation[]> {
   return apiClient.get<RAGEvaluation[]>("/api/v1/rag/evaluations")
 }
 
-// React Query Hooks
+// React Query Hooks — keyed via central queryKeys factory
 export function useKnowledgeBasesQuery() {
   return useQuery({
-    queryKey: ["rag", "kbs"],
+    queryKey: queryKeys.rag.knowledgeBases(),
     queryFn: fetchKnowledgeBases,
   })
 }
 
 export function useDatasetsQuery(kbId?: string | null) {
   return useQuery({
-    queryKey: ["rag", "datasets", kbId],
+    queryKey: queryKeys.rag.datasets(kbId),
     queryFn: () => fetchDatasets(kbId),
   })
 }
 
 export function useDocumentsQuery(datasetId?: string | null) {
   return useQuery({
-    queryKey: ["rag", "documents", datasetId],
+    queryKey: queryKeys.rag.documents(datasetId),
     queryFn: () => fetchDocuments(datasetId),
   })
 }
 
 export function useChunksQuery(documentId?: string | null) {
   return useQuery({
-    queryKey: ["rag", "chunks", documentId],
+    queryKey: queryKeys.rag.chunks(documentId),
     queryFn: () => fetchChunks(documentId),
   })
 }
 
 export function useRAGAnalyticsQuery() {
   return useQuery({
-    queryKey: ["rag", "analytics"],
+    queryKey: queryKeys.rag.analytics(),
     queryFn: fetchRAGAnalytics,
   })
 }
 
 export function useKnowledgeGraphQuery(kbId: string = "kb_enterprise_01") {
   return useQuery({
-    queryKey: ["rag", "graph", kbId],
+    queryKey: queryKeys.rag.graph(kbId),
     queryFn: () => fetchKnowledgeGraph(kbId),
   })
 }
 
 export function useEvaluationsQuery() {
   return useQuery({
-    queryKey: ["rag", "evaluations"],
+    queryKey: queryKeys.rag.evaluations(),
     queryFn: fetchEvaluations,
   })
 }

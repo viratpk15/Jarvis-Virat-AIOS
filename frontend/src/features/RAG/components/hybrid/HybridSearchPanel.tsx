@@ -1,4 +1,5 @@
-import { Sliders, Zap, Award } from "lucide-react"
+import { useState } from "react"
+import { Sliders, Zap, Award, AlertCircle } from "lucide-react"
 import { useRAGStudioStore } from "../../store/useRAGStudioStore"
 import { runHybridSearchApi } from "../../services/ragApi"
 
@@ -16,9 +17,12 @@ export function HybridSearchPanel() {
   const isSearching = useRAGStudioStore((s) => s.isSearching)
   const setIsSearching = useRAGStudioStore((s) => s.setIsSearching)
 
+  const [searchError, setSearchError] = useState<string | null>(null)
+
   const handleRunSearch = async () => {
     if (!queryText) return
     setIsSearching(true)
+    setSearchError(null)
     try {
       const res = await runHybridSearchApi({
         query: queryText,
@@ -27,12 +31,14 @@ export function HybridSearchPanel() {
         use_reranker: useReranker,
       })
       setSearchResults(res.results)
-    } catch (err: any) {
-      console.error(err)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred"
+      setSearchError(message)
     } finally {
       setIsSearching(false)
     }
   }
+
 
   return (
     <div className="space-y-4 bg-secondary/15 border border-border/40 rounded-xl p-4">
@@ -111,6 +117,14 @@ export function HybridSearchPanel() {
           </button>
         </div>
       </div>
+
+      {/* Error Banner */}
+      {searchError && (
+        <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/40 rounded-lg text-xs font-mono text-red-400">
+          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>{searchError}</span>
+        </div>
+      )}
 
       {/* Results Matrix */}
       {searchResults.length === 0 ? (

@@ -41,6 +41,17 @@ export const queryKeys = {
     cache: (sessionId: string) => ["memory", "cache", sessionId] as const
   },
   
+  rag: {
+    all: () => ["rag"] as const,
+    knowledgeBases: () => ["rag", "kbs"] as const,
+    datasets: (kbId?: string | null) => ["rag", "datasets", kbId] as const,
+    documents: (datasetId?: string | null) => ["rag", "documents", datasetId] as const,
+    chunks: (documentId?: string | null) => ["rag", "chunks", documentId] as const,
+    analytics: () => ["rag", "analytics"] as const,
+    graph: (kbId: string) => ["rag", "graph", kbId] as const,
+    evaluations: () => ["rag", "evaluations"] as const,
+  },
+
   files: {
     all: () => ["files"] as const,
     list: () => ["files", "list"] as const
