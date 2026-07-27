@@ -38,7 +38,12 @@ export const queryKeys = {
   
   memory: {
     all: () => ["memory"] as const,
-    cache: (sessionId: string) => ["memory", "cache", sessionId] as const
+    timeline: (sessionId: string, tier?: string) => ["memory", "timeline", sessionId, tier] as const,
+    detail: (memoryId: string) => ["memory", "detail", memoryId] as const,
+    graph: (userId?: string) => ["memory", "graph", userId] as const,
+    embeddings: (sessionId: string) => ["memory", "embeddings", sessionId] as const,
+    contextWindow: (sessionId: string) => ["memory", "contextWindow", sessionId] as const,
+    analytics: (sessionId: string) => ["memory", "analytics", sessionId] as const,
   },
   
   rag: {
