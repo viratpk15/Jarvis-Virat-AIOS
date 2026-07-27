@@ -7,6 +7,7 @@ import { NodePaletteSidebar } from "./components/builder/NodePaletteSidebar"
 import { NodePropertyInspector } from "./components/builder/NodePropertyInspector"
 import { WorkflowExecutionConsole } from "./components/console/WorkflowExecutionConsole"
 import { WorkflowAnalyticsDashboard } from "./components/analytics/WorkflowAnalyticsDashboard"
+import { WorkflowLibraryPanel } from "./components/library/WorkflowLibraryPanel"
 import type { WorkflowTabType } from "./types/workflows.types"
 import { GitBranch, Library, Activity } from "lucide-react"
 
@@ -69,11 +70,7 @@ export default function WorkflowPage() {
           </div>
         )}
 
-        {activeTab === "library" && (
-          <div className="p-8 text-center text-xs font-mono text-muted-foreground bg-secondary/10 border border-dashed border-border/40 rounded-xl">
-            Template Gallery: Select pre-configured LangGraph workflow graphs (Multi-Agent, Human-in-the-Loop, Model Fallbacks).
-          </div>
-        )}
+        {activeTab === "library" && <WorkflowLibraryPanel />}
 
         {activeTab === "analytics" && <WorkflowAnalyticsDashboard />}
       </div>
