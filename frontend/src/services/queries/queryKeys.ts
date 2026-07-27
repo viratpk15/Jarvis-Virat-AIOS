@@ -73,5 +73,13 @@ export const queryKeys = {
     registry: () => ["models", "registry"] as const,
     routingPolicies: () => ["models", "routingPolicies"] as const,
     analytics: () => ["models", "analytics"] as const,
+  },
+
+  workflows: {
+    all: () => ["workflows"] as const,
+    list: () => ["workflows", "list"] as const,
+    templates: () => ["workflows", "templates"] as const,
+    detail: (id: string) => ["workflows", "detail", id] as const,
+    analytics: (id: string) => ["workflows", "analytics", id] as const,
   }
 } as const
