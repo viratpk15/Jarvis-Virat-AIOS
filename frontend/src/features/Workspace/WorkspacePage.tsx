@@ -220,7 +220,7 @@ export default function WorkspacePage() {
 
   // Active message list combining loaded history + optimistic user message
   const activeMessages: Message[] = selectedChat ? [
-    ...selectedChat.messages,
+    ...(selectedChat.messages || []),
     ...(optimisticUserMsg ? [optimisticUserMsg] : [])
   ] : []
 

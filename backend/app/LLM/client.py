@@ -19,15 +19,23 @@ load_dotenv()
 class LLMClient:
     """Provider-independent LLM client interface."""
 
-    def __init__(self, provider: Any = None) -> None:
+    def __init__(self, provider: Any = None, provider_type: str = "groq", model: str = "llama-3.3-70b-versatile") -> None:
         """Initialize the LLM client with a provider instance.
 
-        Defaults to ChatGroq using environment configuration.
+        Defaults to ChatGroq (main LLM) or ChatOllama/ChatOpenAI for local Ollama.
         """
-        self._provider = provider or ChatGroq(
-            model="llama-3.3-70b-versatile",
-            api_key=os.getenv("GROQ_API_KEY"),
-        )
+        if provider:
+            self._provider = provider
+        elif provider_type.lower() == "ollama":
+            from langchain_community.chat_models import ChatOllama
+            base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+            self._provider = ChatOllama(model=model or "llama3:latest", base_url=base_url)
+        else:
+            # Default Groq provider (main LLM)
+            self._provider = ChatGroq(
+                model=model or "llama-3.3-70b-versatile",
+                api_key=os.getenv("GROQ_API_KEY"),
+            )
 
     @property
     def provider(self) -> Any:
@@ -62,6 +70,11 @@ class LLMClient:
                 token = str(chunk)
             if token:
                 yield str(token)
+
+
+def get_llm_client(provider_name: str = "groq", model_name: str = "llama-3.3-70b-versatile") -> LLMClient:
+    """Factory helper to retrieve configured LLM client instance."""
+    return LLMClient(provider_type=provider_name, model=model_name)
 
 
 llm_client = LLMClient()
