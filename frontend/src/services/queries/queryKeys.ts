@@ -81,5 +81,14 @@ export const queryKeys = {
     templates: () => ["workflows", "templates"] as const,
     detail: (id: string) => ["workflows", "detail", id] as const,
     analytics: (id: string) => ["workflows", "analytics", id] as const,
+  },
+
+  deployments: {
+    all: () => ["deployments"] as const,
+    environments: () => ["deployments", "environments"] as const,
+    targets: () => ["deployments", "targets"] as const,
+    health: (env: string) => ["deployments", "health", env] as const,
+    secrets: (env: string) => ["deployments", "secrets", env] as const,
+    auditLogs: () => ["deployments", "auditLogs"] as const,
   }
 } as const

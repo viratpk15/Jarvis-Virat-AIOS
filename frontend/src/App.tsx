@@ -16,6 +16,7 @@ const PromptsPage = lazy(() => import("@/features/Prompts/PromptsPage"))
 const RAGPage = lazy(() => import("@/features/RAG/RAGPage"))
 const ModelsPage = lazy(() => import("@/features/Models/ModelsPage"))
 const WorkflowPage = lazy(() => import("@/features/Workflows/WorkflowPage"))
+const DeploymentPage = lazy(() => import("@/features/Deployments/DeploymentPage"))
 const SettingsPage = lazy(() => import("@/features/Settings/SettingsPage"))
 const AuthPage = lazy(() => import("@/features/Auth/AuthPage"))
 
@@ -77,6 +78,7 @@ function App() {
                 <Route path="rag" element={<RAGPage />} />
                 <Route path="models" element={<ModelsPage />} />
                 <Route path="workflows" element={<WorkflowPage />} />
+                <Route path="deployments" element={<DeploymentPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
             </Route>

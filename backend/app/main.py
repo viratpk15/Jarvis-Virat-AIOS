@@ -26,6 +26,7 @@ from app.Agents.routers import router as agents_router
 from app.FastAPI.routes_memory import router as memory_router
 from app.FastAPI.routes_models import router as models_router
 from app.FastAPI.routes_workflows import router as workflows_router
+from app.FastAPI.routes_deployments import router as deployments_router
 from app.Config.settings import APP_VERSION, CORS_ORIGINS
 from app.FastAPI.rate_limiter import limiter
 
@@ -188,3 +189,6 @@ app.include_router(models_router)
 
 # Workflow Studio endpoints
 app.include_router(workflows_router)
+
+# Deployment Studio endpoints
+app.include_router(deployments_router)
