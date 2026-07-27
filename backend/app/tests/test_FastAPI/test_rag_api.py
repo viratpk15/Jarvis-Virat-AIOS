@@ -4,7 +4,14 @@ Integration Tests for FastAPI RAG Studio Endpoints (/api/v1/rag/*)
 
 from fastapi.testclient import TestClient
 from app.main import app
+from app.Auth.dependencies import get_current_user
 
+
+def mock_get_current_user():
+    return {"sub": "test_user@jarvis.ai", "user_id": 1}
+
+
+app.dependency_overrides[get_current_user] = mock_get_current_user
 client = TestClient(app)
 
 

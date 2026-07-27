@@ -1,5 +1,9 @@
 """
 Jarvis AIOS — FastAPI RAG Studio Router (/api/v1/rag/*)
+
+All endpoints are protected by the existing JWT/RBAC dependency `get_current_user`.
+Request schemas are defined inline here; structural refactor into schemas.py is
+tracked as a minor debt item.
 """
 
 from fastapi import APIRouter, Depends, Form
@@ -7,6 +11,7 @@ from fastapi.responses import StreamingResponse
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 
+from app.Auth.dependencies import get_current_user
 from app.RAG.models import (
     KnowledgeBase,
     Dataset,
@@ -17,7 +22,11 @@ from app.RAG.models import (
 )
 from app.RAG.rag_manager import RAGManager
 
-router = APIRouter(prefix="/api/v1/rag", tags=["RAG Studio"])
+router = APIRouter(
+    prefix="/api/v1/rag",
+    tags=["RAG Studio"],
+    dependencies=[Depends(get_current_user)],
+)
 
 # Dependency Injection
 def get_rag_manager() -> RAGManager:
@@ -96,7 +105,7 @@ def ingest_document(
 
 @router.get("/chunks", response_model=List[Chunk])
 def list_chunks(document_id: Optional[str] = None, manager: RAGManager = Depends(get_rag_manager)):
-    return manager.repo.list_chunks(document_id)
+    return manager.list_chunks(document_id)
 
 
 @router.post("/chunk-preview")
@@ -141,7 +150,7 @@ async def stream_rag_answer(
 
 @router.get("/evaluations", response_model=List[RAGEvaluation])
 def list_evaluations(manager: RAGManager = Depends(get_rag_manager)):
-    return manager.repo.list_evaluations()
+    return manager.list_evaluations()
 
 
 @router.post("/evaluations", response_model=RAGEvaluation)

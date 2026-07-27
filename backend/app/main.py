@@ -22,6 +22,7 @@ from app.Auth.routes import router as auth_router
 from app.FastAPI.routes_tools import router as tools_router
 from app.FastAPI.routes_prompts import router as prompts_router
 from app.FastAPI.routes_rag import router as rag_router
+from app.Agents.routers import router as agents_router
 from app.Config.settings import APP_VERSION, CORS_ORIGINS
 from app.FastAPI.rate_limiter import limiter
 
@@ -172,3 +173,6 @@ app.include_router(prompts_router)
 
 # RAG Studio endpoints
 app.include_router(rag_router)
+
+# Agent Studio endpoints
+app.include_router(agents_router)

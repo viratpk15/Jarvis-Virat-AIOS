@@ -35,6 +35,14 @@ class RAGManager:
     def list_documents(self, dataset_id: Optional[str] = None) -> List[Document]:
         return self.repo.list_documents(dataset_id)
 
+    def list_chunks(self, document_id: Optional[str] = None) -> List:
+        """Return chunks, optionally filtered by document_id."""
+        return self.repo.list_chunks(document_id)
+
+    def list_evaluations(self) -> List:
+        """Return all recorded RAG evaluations."""
+        return self.repo.list_evaluations()
+
     def ingest_document(self, dataset_id: str, filename: str, file_type: str, text: str) -> Document:
         return self.repo.add_document(dataset_id, filename, file_type, text)
 
@@ -177,7 +185,7 @@ class RAGManager:
         avg_faithfulness = sum(e.faithfulness for e in evals) / max(1, len(evals)) if evals else 0.98
 
         return {
-            "total_queries": len(traces) + 42,
+            "total_queries": len(traces),
             "total_vectors": len(self.repo.list_chunks()) * 1536,
             "avg_latency_ms": round(avg_latency, 2),
             "avg_faithfulness": round(avg_faithfulness, 2),
