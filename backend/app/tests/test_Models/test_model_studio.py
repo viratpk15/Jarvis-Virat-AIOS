@@ -44,11 +44,13 @@ def test_provider_registration():
 
 def test_model_registration():
     db = SessionLocal()
+    import uuid
+    m_id = f"gpt-4o-mini-test-{uuid.uuid4().hex[:6]}"
     try:
         mod = model_manager.create_model_config(
             db,
             provider_name="openai",
-            model_id="gpt-4o-mini-test",
+            model_id=m_id,
             display_name="GPT-4o Mini Test",
             context_window=128000,
             max_output_tokens=4096,
@@ -56,7 +58,7 @@ def test_model_registration():
             output_cost_per_1k=0.00060,
             is_default=False,
         )
-        assert mod["model_id"] == "gpt-4o-mini-test"
+        assert mod["model_id"] == m_id
         assert mod["provider_name"] == "openai"
     finally:
         db.close()

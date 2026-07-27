@@ -26,6 +26,7 @@ try:
     from app.Agents import models as _agent_models   # noqa: F401, E402  — registers Agent Studio tables
     from app.Memory import models as _memory_models  # noqa: F401, E402  — registers Memory Studio tables
     from app.Models import models as _model_models  # noqa: F401, E402  — registers Model Studio tables
+    from app.Workflows import models as _wf_models   # noqa: F401, E402  — registers Workflow Studio tables
     target_metadata = SABase.metadata                # single registry; all models share this Base
 except Exception:
     # Autogenerate won't work, but upgrade/downgrade will succeed.
