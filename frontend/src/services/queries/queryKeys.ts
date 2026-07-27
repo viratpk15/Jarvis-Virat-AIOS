@@ -65,5 +65,13 @@ export const queryKeys = {
   settings: {
     all: () => ["settings"] as const,
     system: () => ["settings", "system"] as const
+  },
+
+  models: {
+    all: () => ["models"] as const,
+    providers: () => ["models", "providers"] as const,
+    registry: () => ["models", "registry"] as const,
+    routingPolicies: () => ["models", "routingPolicies"] as const,
+    analytics: () => ["models", "analytics"] as const,
   }
 } as const
