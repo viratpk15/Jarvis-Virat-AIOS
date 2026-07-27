@@ -28,7 +28,14 @@ branch_labels = None
 depends_on = None
 
 
+def _table_exists(name: str) -> bool:
+    conn = op.get_bind()
+    return sa.inspect(conn).has_table(name)
+
+
 def upgrade() -> None:
+    if _table_exists("agent"):
+        return
     op.create_table(
         "agent",
         sa.Column("id", sa.Integer(), nullable=False),

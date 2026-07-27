@@ -28,7 +28,9 @@ try:
     from app.Models import models as _model_models  # noqa: F401, E402  — registers Model Studio tables
     from app.Workflows import models as _wf_models   # noqa: F401, E402  — registers Workflow Studio tables
     from app.Deployments import models as _dep_models # noqa: F401, E402  — registers Deployment Studio tables
+    from app.Data.database import get_connection_url  # noqa: E402
     target_metadata = SABase.metadata                # single registry; all models share this Base
+    config.set_main_option("sqlalchemy.url", get_connection_url())
 except Exception:
     # Autogenerate won't work, but upgrade/downgrade will succeed.
     target_metadata = None

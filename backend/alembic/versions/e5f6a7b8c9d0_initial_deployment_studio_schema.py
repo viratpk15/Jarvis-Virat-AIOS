@@ -16,7 +16,14 @@ branch_labels = None
 depends_on = None
 
 
+def _table_exists(name: str) -> bool:
+    conn = op.get_bind()
+    return sa.inspect(conn).has_table(name)
+
+
 def upgrade() -> None:
+    if _table_exists("deployment_environments"):
+        return
     # 1. deployment_environments
     op.create_table(
         "deployment_environments",

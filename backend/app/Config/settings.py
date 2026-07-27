@@ -28,12 +28,18 @@ AUTH_DB_PATH: str = os.getenv("AUTH_DB_PATH", "./data/auth.db")
 # Persistence database path (SQLite) for memory/session storage.
 PERSISTENCE_DB_PATH: str = os.getenv("PERSISTENCE_DB_PATH", "./data/memory.db")
 
-# Database Provider configuration
-# "sqlite" for local development (default), "postgres" for production (Supabase)
-DATABASE_PROVIDER: str = os.getenv("DATABASE_PROVIDER", "sqlite").lower()
-
 # PostgreSQL Connection URL (e.g. Supabase connection string)
 DATABASE_URL: str | None = os.getenv("DATABASE_URL")
+
+# Database Provider configuration
+# "sqlite" for local development (default), "postgres" for production (Supabase)
+_provider_env = os.getenv("DATABASE_PROVIDER")
+if _provider_env:
+    DATABASE_PROVIDER: str = _provider_env.lower()
+elif DATABASE_URL:
+    DATABASE_PROVIDER: str = "postgres"
+else:
+    DATABASE_PROVIDER: str = "sqlite"
 
 # Application version. Bump this when releasing.
 APP_VERSION: str = os.getenv("APP_VERSION", "1.0.0")
