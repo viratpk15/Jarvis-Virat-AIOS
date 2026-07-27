@@ -33,7 +33,7 @@ export function VectorProjectionMap() {
       {/* Vector Projection Canvas Area */}
       <div className="relative h-72 bg-[#0D1117] border border-border/40 rounded-xl overflow-hidden flex items-center justify-center">
         {/* Grid Axis Overlay */}
-        <div className="absolute inset-0 bg-[radial-gradient(#1E293B_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(#1E293B_1px,transparent_1px)] bg-size-[16px_16px] opacity-40 pointer-events-none" />
 
         {/* Render Vector Nodes */}
         {points.map((p) => {

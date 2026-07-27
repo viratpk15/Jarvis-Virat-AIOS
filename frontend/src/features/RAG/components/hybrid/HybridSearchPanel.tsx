@@ -121,7 +121,7 @@ export function HybridSearchPanel() {
       {/* Error Banner */}
       {searchError && (
         <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/40 rounded-lg text-xs font-mono text-red-400">
-          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           <span>{searchError}</span>
         </div>
       )}

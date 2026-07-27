@@ -18,9 +18,9 @@ class DeploymentEnvironmentResponse(BaseModel):
 
 
 class EnvironmentCreatePayload(BaseModel):
-    env_id: str = Field(..., example="staging")
-    name: str = Field(..., example="Staging Pre-Release Environment")
-    tier: str = Field("staging", example="staging")
+    env_id: str = Field(..., examples=["staging"])
+    name: str = Field(..., examples=["Staging Pre-Release Environment"])
+    tier: str = Field("staging", examples=["staging"])
 
 
 class DeploymentTargetResponse(BaseModel):
@@ -33,15 +33,15 @@ class DeploymentTargetResponse(BaseModel):
 
 
 class TargetRegisterPayload(BaseModel):
-    env_id: str = Field(..., example="prod")
-    provider_type: str = Field(..., example="kubernetes")
+    env_id: str = Field(..., examples=["prod"])
+    provider_type: str = Field(..., examples=["kubernetes"])
     config: Dict[str, Any] = Field(default_factory=dict)
 
 
 class RolloutTriggerPayload(BaseModel):
-    env_id: str = Field("prod", example="prod")
-    version_tag: str = Field(..., example="v1.8.0")
-    strategy: str = Field("blue_green", example="blue_green")
+    env_id: str = Field("prod", examples=["prod"])
+    version_tag: str = Field(..., examples=["v1.8.0"])
+    strategy: str = Field("blue_green", examples=["blue_green"])
 
 
 class RolloutResponse(BaseModel):
@@ -55,8 +55,8 @@ class RolloutResponse(BaseModel):
 
 
 class RollbackTriggerPayload(BaseModel):
-    env_id: str = Field("prod", example="prod")
-    target_release_id: Optional[str] = Field(None, example="rel_v1_7_0")
+    env_id: str = Field("prod", examples=["prod"])
+    target_release_id: Optional[str] = Field(None, examples=["rel_v1_7_0"])
 
 
 class SecretVaultEntryResponse(BaseModel):
@@ -67,9 +67,9 @@ class SecretVaultEntryResponse(BaseModel):
 
 
 class SecretSavePayload(BaseModel):
-    env_id: str = Field("prod", example="prod")
-    secret_key: str = Field(..., example="OPENAI_API_KEY")
-    raw_value: str = Field(..., example="sk-proj-super-secret-key-12345")
+    env_id: str = Field("prod", examples=["prod"])
+    secret_key: str = Field(..., examples=["OPENAI_API_KEY"])
+    raw_value: str = Field(..., examples=["sk-proj-super-secret-key-12345"])
 
 
 class DatabaseBackupResponse(BaseModel):
@@ -81,7 +81,7 @@ class DatabaseBackupResponse(BaseModel):
 
 
 class BackupRestorePayload(BaseModel):
-    snapshot_name: str = Field(..., example="backup_prod_20260727_173000")
+    snapshot_name: str = Field(..., examples=["backup_prod_20260727_173000"])
 
 
 class ContainerProbe(BaseModel):

@@ -93,7 +93,7 @@ export function MemoryTimelinePanel() {
         {/* Action Error Banner */}
         {actionError && (
           <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-2 text-xs text-red-400 font-mono">
-            <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
             <span>{actionError}</span>
           </div>
         )}
@@ -124,11 +124,11 @@ export function MemoryTimelinePanel() {
                   }`}
                 >
                   <div className="flex items-start gap-2.5 overflow-hidden">
-                    {item.tier === "working" && <Cpu className="h-4 w-4 text-cyan-400 mt-0.5 flex-shrink-0" />}
-                    {item.tier === "conversation" && <Server className="h-4 w-4 text-violet-400 mt-0.5 flex-shrink-0" />}
-                    {item.tier === "episodic" && <Database className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />}
-                    {item.tier === "semantic" && <Brain className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />}
-                    {item.tier === "long_term" && <Code className="h-4 w-4 text-rose-400 mt-0.5 flex-shrink-0" />}
+                    {item.tier === "working" && <Cpu className="h-4 w-4 text-cyan-400 mt-0.5 shrink-0" />}
+                    {item.tier === "conversation" && <Server className="h-4 w-4 text-violet-400 mt-0.5 shrink-0" />}
+                    {item.tier === "episodic" && <Database className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />}
+                    {item.tier === "semantic" && <Brain className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />}
+                    {item.tier === "long_term" && <Code className="h-4 w-4 text-rose-400 mt-0.5 shrink-0" />}
 
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2">

@@ -106,7 +106,7 @@ export function RecallPlaygroundPanel() {
       {/* Error Banner */}
       {searchError && (
         <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-2 text-xs font-mono text-red-400">
-          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           <span>{searchError}</span>
         </div>
       )}

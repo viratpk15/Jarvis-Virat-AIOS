@@ -10,24 +10,11 @@ variables or configuration files.
 
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MCPServerConfigModel(BaseModel):
-    """Pydantic model for MCP server configuration.
-
-    Used to validate MCP server configuration at runtime.
-    Future implementations can load this from JSON/YAML config files.
-
-    Attributes:
-        name: Unique identifier for the MCP server.
-        description: Human-readable description of the server.
-        enabled: Whether the server is active.
-        command: Optional command to launch the server (for subprocess MCP servers).
-        args: Optional arguments for the server command.
-        env: Optional environment variables for the server.
-        timeout: Timeout in seconds for tool execution (default 30).
-    """
+    model_config = ConfigDict(frozen=True)
 
     name: str = Field(..., min_length=1, description="Unique server identifier")
     description: str = Field(default="", description="Server description")
@@ -37,18 +24,9 @@ class MCPServerConfigModel(BaseModel):
     env: dict[str, str] = Field(default_factory=dict, description="Environment variables")
     timeout: int = Field(default=30, ge=1, le=300, description="Execution timeout in seconds")
 
-    class Config:
-        """Pydantic model configuration."""
-        frozen = True  # Immutable after creation
-
 
 class MCPConfigModel(BaseModel):
-    """Root configuration model for MCP integration.
-
-    Attributes:
-        servers: List of MCP server configurations.
-        auto_register: Whether to auto-register enabled servers on startup.
-    """
+    model_config = ConfigDict(frozen=True)
 
     servers: list[MCPServerConfigModel] = Field(
         default_factory=list,
@@ -58,10 +36,6 @@ class MCPConfigModel(BaseModel):
         default=False,
         description="Auto-register servers on startup"
     )
-
-    class Config:
-        """Pydantic model configuration."""
-        frozen = True
 
     def get_enabled_servers(self) -> list[MCPServerConfigModel]:
         """Get list of enabled server configurations.

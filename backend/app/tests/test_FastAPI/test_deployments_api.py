@@ -3,7 +3,7 @@
 Jarvis AIOS — FastAPI REST Integration Tests for Deployment Studio.
 """
 
-from starlette.testclient import TestClient
+from fastapi.testclient import TestClient
 from app.main import app
 
 client = TestClient(app)

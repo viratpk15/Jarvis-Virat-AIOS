@@ -66,7 +66,7 @@ export function ProviderConfigPanel() {
       </div>
 
       <div className="p-3 bg-secondary/20 border border-border/30 rounded-lg flex items-center gap-2 text-muted-foreground text-[11px]">
-        <ShieldCheck className="h-4 w-4 text-cyan-400 flex-shrink-0" />
+        <ShieldCheck className="h-4 w-4 text-cyan-400 shrink-0" />
         <span>Provider credentials are encrypted at rest with XOR ciphers and decrypted only in memory during model execution.</span>
       </div>
 

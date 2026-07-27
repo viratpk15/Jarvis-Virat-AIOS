@@ -62,7 +62,7 @@ export function ContextWindowPanel() {
       {/* Compression Status Notification */}
       {compressStatus && (
         <div className="p-2.5 bg-cyan-500/10 border border-cyan-500/30 rounded-lg flex items-center gap-2 text-xs font-mono text-cyan-300">
-          <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
+          <CheckCircle className="h-3.5 w-3.5 shrink-0" />
           <span>{compressStatus}</span>
         </div>
       )}

@@ -45,9 +45,9 @@ class WorkflowDefinitionResponse(BaseModel):
 
 
 class WorkflowCreatePayload(BaseModel):
-    workflow_id: str = Field(..., example="wf_agent_rag_pipeline")
-    name: str = Field(..., example="Autonomous Agent & RAG Pipeline")
-    description: Optional[str] = Field(None, example="Workflow combining RAG knowledge retrieval and Tool execution")
+    workflow_id: str = Field(..., examples=["wf_agent_rag_pipeline"])
+    name: str = Field(..., examples=["Autonomous Agent & RAG Pipeline"])
+    description: Optional[str] = Field(None, examples=["Workflow combining RAG knowledge retrieval and Tool execution"])
     nodes: List[WorkflowNode] = Field(default_factory=list)
     edges: List[WorkflowEdge] = Field(default_factory=list)
     variables: Dict[str, Any] = Field(default_factory=dict)
@@ -77,7 +77,7 @@ class ExecutionResponse(BaseModel):
 
 
 class ResumeExecutionPayload(BaseModel):
-    action: str = Field(..., example="approve")  # approve, reject, step
+    action: str = Field(..., examples=["approve"])  # approve, reject, step
     inputs: Dict[str, Any] = Field(default_factory=dict)
 
 

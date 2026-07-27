@@ -21,10 +21,10 @@ class ProviderConfigResponse(BaseModel):
 
 
 class ProviderCreatePayload(BaseModel):
-    provider_name: str = Field(..., example="openai")
-    display_name: str = Field(..., example="OpenAI Official")
-    api_base_url: str = Field(..., example="https://api.openai.com/v1")
-    api_key: Optional[str] = Field(None, example="sk-...")
+    provider_name: str = Field(..., examples=["openai"])
+    display_name: str = Field(..., examples=["OpenAI Official"])
+    api_base_url: str = Field(..., examples=["https://api.openai.com/v1"])
+    api_key: Optional[str] = Field(None, examples=["sk-..."])
     is_enabled: bool = True
 
 
@@ -45,9 +45,9 @@ class LLMModelConfigResponse(BaseModel):
 
 
 class LLMModelCreatePayload(BaseModel):
-    provider_name: str = Field(..., example="google")
-    model_id: str = Field(..., example="gemini-2.5-flash")
-    display_name: str = Field(..., example="Gemini 2.5 Flash")
+    provider_name: str = Field(..., examples=["google"])
+    model_id: str = Field(..., examples=["gemini-2.5-flash"])
+    display_name: str = Field(..., examples=["Gemini 2.5 Flash"])
     context_window: int = Field(1000000)
     max_output_tokens: int = Field(8192)
     input_cost_per_1k: float = Field(0.0001)
@@ -84,13 +84,13 @@ class BenchmarkRunResponse(BaseModel):
 
 
 class BenchmarkRunPayload(BaseModel):
-    model_id: str = Field(..., example="gemini-2.5-flash")
+    model_id: str = Field(..., examples=["gemini-2.5-flash"])
     prompt_tokens: int = Field(100)
     completion_tokens: int = Field(500)
 
 
 class CostEstimatePayload(BaseModel):
-    model_id: str = Field(..., example="gpt-4o")
+    model_id: str = Field(..., examples=["gpt-4o"])
     prompt_tokens: int = Field(1000)
     completion_tokens: int = Field(500)
     monthly_requests: int = Field(10000)

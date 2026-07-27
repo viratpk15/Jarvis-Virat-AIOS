@@ -80,7 +80,7 @@ export function WorkflowExecutionConsole() {
       {statusMessage && (
         <div className="p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg flex items-center justify-between text-cyan-300">
           <div className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-cyan-400 flex-shrink-0" />
+            <CheckCircle className="h-4 w-4 text-cyan-400 shrink-0" />
             <span>{statusMessage}</span>
           </div>
 
